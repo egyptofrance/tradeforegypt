@@ -1,0 +1,99 @@
+[
+  {
+    "family_id": 37,
+    "family_name": "الملابس والأزياء",
+    "products": [
+      {"name": "قميص", "slug": "shirt-fashion"},
+      {"name": "بنطلون", "slug": "pants-fashion"},
+      {"name": "فستان", "slug": "dress-fashion"},
+      {"name": "جاكيت", "slug": "jacket-fashion"},
+      {"name": "حذاء", "slug": "shoes-fashion"}
+    ]
+  },
+  {
+    "family_id": 38,
+    "family_name": "الحقائب والإكسسوارات",
+    "products": [
+      {"name": "حقيبة يد", "slug": "handbag-accessories"},
+      {"name": "حقيبة ظهر", "slug": "backpack-accessories"},
+      {"name": "محفظة", "slug": "wallet-accessories"},
+      {"name": "حزام", "slug": "belt-accessories"},
+      {"name": "نظارة شمسية", "slug": "sunglasses-accessories"}
+    ]
+  },
+  {
+    "family_id": 39,
+    "family_name": "معدات البناء والرافعات",
+    "products": [
+      {"name": "رافعة برجية", "slug": "tower-crane-construction"},
+      {"name": "رافعة متحركة", "slug": "mobile-crane-construction"},
+      {"name": "حفار", "slug": "excavator-construction"},
+      {"name": "لودر", "slug": "loader-construction"},
+      {"name": "جريدر", "slug": "grader-construction"}
+    ]
+  },
+  {
+    "family_id": 40,
+    "family_name": "المصاعد والسلالم المتحركة",
+    "products": [
+      {"name": "مصعد ركاب", "slug": "passenger-elevator"},
+      {"name": "مصعد بضائع", "slug": "freight-elevator"},
+      {"name": "سلم متحرك", "slug": "escalator"},
+      {"name": "مصعد بانورامي", "slug": "panoramic-elevator"}
+    ]
+  },
+  {
+    "family_id": 41,
+    "family_name": "معدات حمامات السباحة",
+    "products": [
+      {"name": "فلتر", "slug": "filter-pool"},
+      {"name": "مضخة", "slug": "pump-pool"},
+      {"name": "سخان", "slug": "heater-pool"},
+      {"name": "إضاءة", "slug": "lighting-pool"},
+      {"name": "نظام تعقيم", "slug": "sanitizer-pool"}
+    ]
+  },
+  {
+    "family_id": 42,
+    "family_name": "الشاحنات والمعدات الثقيلة",
+    "products": [
+      {"name": "شاحنة نقل", "slug": "truck-heavy"},
+      {"name": "قلاب", "slug": "dump-truck-heavy"},
+      {"name": "ونش", "slug": "winch-heavy"},
+      {"name": "خلاطة خرسانة", "slug": "mixer-heavy"},
+      {"name": "ناقلة", "slug": "carrier-heavy"}
+    ]
+  },
+  {
+    "family_id": 43,
+    "family_name": "السخانات ونظم التدفئة",
+    "products": [
+      {"name": "سخان كهربائي", "slug": "electric-heater"},
+      {"name": "سخان غاز", "slug": "gas-heater"},
+      {"name": "سخان شمسي", "slug": "solar-heater"},
+      {"name": "غلاية", "slug": "boiler-heater"},
+      {"name": "دفاية", "slug": "radiator-heater"}
+    ]
+  },
+  {
+    "family_id": 44,
+    "family_name": "المضخات والمحركات",
+    "products": [
+      {"name": "مضخة مياه", "slug": "water-pump"},
+      {"name": "مضخة غاطسة", "slug": "submersible-pump"},
+      {"name": "محرك كهربائي", "slug": "electric-motor"},
+      {"name": "توربينة", "slug": "turbine-motor"},
+      {"name": "ضاغط", "slug": "compressor-motor"}
+    ]
+  },
+  {
+    "family_id": 45,
+    "family_name": "الرافعات الشوكية",
+    "products": [
+      {"name": "رافعة شوكية ديزل", "slug": "diesel-forklift"},
+      {"name": "رافعة شوكية كهربائية", "slug": "electric-forklift"},
+      {"name": "رافعة يدوية", "slug": "manual-forklift"},
+      {"name": "رافعة وصول مرتفع", "slug": "reach-forklift"}
+    ]
+  }
+]
