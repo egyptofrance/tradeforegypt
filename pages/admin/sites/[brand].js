@@ -26,9 +26,14 @@ export default function BrandPages() {
   const fetchPages = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await fetch(`/api/admin/pages?brandSlug=${brand}`);
-      if (!response.ok) throw new Error('Failed to fetch pages');
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch pages: ${response.status} - ${errorText}`);
+      }
       const result = await response.json();
+      console.log('API Response:', result);
       setData(result);
     } catch (err) {
       setError(err.message);
