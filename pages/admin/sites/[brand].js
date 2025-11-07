@@ -68,10 +68,8 @@ export default function BrandPages() {
         <div className="text-center">
           <div className="text-red-600 text-xl mb-4">⚠️ خطأ في تحميل البيانات</div>
           <p className="text-gray-600">{error}</p>
-          <Link href="/admin/sites">
-            <a className="mt-4 inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-              العودة للمواقع
-            </a>
+          <Link href="/admin/sites" className="mt-4 inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            العودة للمواقع
           </Link>
         </div>
       </div>
@@ -107,10 +105,8 @@ export default function BrandPages() {
                   </p>
                 </div>
               </div>
-              <Link href="/admin/sites">
-                <a className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
-                  ← العودة للمواقع
-                </a>
+              <Link href="/admin/sites" className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                ← العودة للمواقع
               </Link>
             </div>
           </div>
@@ -258,10 +254,8 @@ export default function BrandPages() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <div className="flex gap-2">
-                          <Link href={`/admin/preview${page.path}`}>
-                            <a className="text-blue-600 hover:text-blue-800 font-medium">
-                              معاينة
-                            </a>
+                          <Link href={`/admin/preview${page.path}`} className="text-blue-600 hover:text-blue-800 font-medium">
+                            معاينة
                           </Link>
                           <a 
                             href={page.url}

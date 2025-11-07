@@ -98,10 +98,8 @@ export default function AdminSites() {
                   إجمالي {sitesData?.totalSites || 0} موقع
                 </p>
               </div>
-              <Link href="/admin">
-                <a className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
-                  ← العودة للوحة التحكم
-                </a>
+              <Link href="/admin" className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                ← العودة للوحة التحكم
               </Link>
             </div>
           </div>
@@ -226,10 +224,8 @@ export default function AdminSites() {
 
                 {/* Actions */}
                 <div className="p-4 bg-gray-50 flex gap-2">
-                  <Link href={`/admin/sites/${site.slug}`}>
-                    <a className="flex-1 px-4 py-2 bg-blue-600 text-white text-center rounded-lg hover:bg-blue-700 transition text-sm font-medium">
-                      عرض الصفحات
-                    </a>
+                  <Link href={`/admin/sites/${site.slug}`} className="flex-1 px-4 py-2 bg-blue-600 text-white text-center rounded-lg hover:bg-blue-700 transition text-sm font-medium">
+                    عرض الصفحات
                   </Link>
                   <a 
                     href={`https://${site.subdomain}`}

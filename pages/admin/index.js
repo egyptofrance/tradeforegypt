@@ -16,11 +16,15 @@ export default function AdminDashboard() {
   const fetchStats = async () => {
     try {
       setLoading(true);
+      console.log('Fetching stats...');
       const response = await fetch('/api/admin/stats');
+      console.log('Response status:', response.status);
       if (!response.ok) throw new Error('Failed to fetch stats');
       const data = await response.json();
+      console.log('Data received:', data);
       setStats(data);
     } catch (err) {
+      console.error('Error fetching stats:', err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -71,15 +75,11 @@ export default function AdminDashboard() {
                 لوحة التحكم - Trade for Egypt
               </h1>
               <div className="flex gap-4">
-                <Link href="/admin/sites">
-                  <a className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-                    عرض المواقع
-                  </a>
+                <Link href="/admin/sites" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                  عرض المواقع
                 </Link>
-                <Link href="/">
-                  <a className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
-                    الصفحة الرئيسية
-                  </a>
+                <Link href="/" className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                  الصفحة الرئيسية
                 </Link>
               </div>
             </div>
@@ -195,10 +195,8 @@ export default function AdminDashboard() {
                       <p className="font-semibold text-gray-900">{brand.name}</p>
                       <p className="text-sm text-gray-500">{brand.slug}.tradeforegypt.com</p>
                     </div>
-                    <Link href={`/admin/sites/${brand.slug}`}>
-                      <a className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                        عرض →
-                      </a>
+                    <Link href={`/admin/sites/${brand.slug}`} className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                      عرض →
                     </Link>
                   </div>
                 ))}
@@ -235,16 +233,14 @@ export default function AdminDashboard() {
           <div className="mt-8 bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">إجراءات سريعة</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Link href="/admin/sites">
-                <a className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                  </svg>
-                  <div>
-                    <p className="font-semibold text-gray-900">عرض جميع المواقع</p>
-                    <p className="text-sm text-gray-600">إدارة ومعاينة المواقع</p>
-                  </div>
-                </a>
+              <Link href="/admin/sites" className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                </svg>
+                <div>
+                  <p className="font-semibold text-gray-900">عرض جميع المواقع</p>
+                  <p className="text-sm text-gray-600">إدارة ومعاينة المواقع</p>
+                </div>
               </Link>
 
               <button 
