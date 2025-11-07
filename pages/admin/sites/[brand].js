@@ -26,7 +26,7 @@ export default function BrandPages() {
   const fetchPages = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/admin/pages?brand=${brand}`);
+      const response = await fetch(`/api/admin/pages?brandSlug=${brand}`);
       if (!response.ok) throw new Error('Failed to fetch pages');
       const result = await response.json();
       setData(result);
@@ -40,8 +40,8 @@ export default function BrandPages() {
   const filteredPages = data?.pages?.filter(page => {
     const matchesSearch = 
       page.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      page.productSlug.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesKeyword = filterKeyword === 'all' || page.keywordSlug === filterKeyword;
+      page.product.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesKeyword = filterKeyword === 'all' || page.keyword === filterKeyword;
     const matchesStatus = filterStatus === 'all' || page.status === filterStatus;
     return matchesSearch && matchesKeyword && matchesStatus;
   }) || [];
