@@ -2,13 +2,37 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Tajawal Arabic Font */
+/* Tajawal Arabic Font - Force on all elements */
+* {
+  font-family: 'Tajawal', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+}
+
 body {
   font-family: 'Tajawal', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   direction: rtl;
   text-align: right;
 }
 
-* {
-  font-family: 'Tajawal', sans-serif;
+/* Ensure all inputs, buttons, and form elements use Tajawal */
+input,
+button,
+textarea,
+select,
+option {
+  font-family: 'Tajawal', sans-serif !important;
+}
+
+/* Ensure all headings use Tajawal */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Tajawal', sans-serif !important;
+}
+
+/* Ensure all links use Tajawal */
+a {
+  font-family: 'Tajawal', sans-serif !important;
+}
+
+/* Ensure all table elements use Tajawal */
+table, th, td {
+  font-family: 'Tajawal', sans-serif !important;
 }
