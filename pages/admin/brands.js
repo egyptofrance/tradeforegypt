@@ -212,7 +212,10 @@ export default function AdminBrands() {
 
   const filteredBrands = brands.filter(brand =>
     brand.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    brand.slug?.toLowerCase().includes(searchTerm.toLowerCase())
+    brand.slug?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    brand.alternative_names?.some(alt => 
+      alt.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   );
 
   const totalPages = Math.ceil(filteredBrands.length / ITEMS_PER_PAGE);
