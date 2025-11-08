@@ -7,7 +7,7 @@ export default function FamiliesManagement() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingFamily, setEditingFamily] = useState(null);
-  const [formData, setFormData] = useState({ name: '', slug: '', description: '' });
+  const [formData, setFormData] = useState({ name: '', slug: '' });
 
   useEffect(() => {
     fetchFamilies();
@@ -18,7 +18,21 @@ export default function FamiliesManagement() {
       setLoading(true);
       const response = await fetch('/api/admin/families');
       const data = await response.json();
-      setFamilies(data);
+      
+      // Fetch products count for each family
+      const familiesWithProducts = await Promise.all(
+        data.map(async (family) => {
+          const productsRes = await fetch(`/api/admin/families?id=${family.id}&includeProducts=true`);
+          const productsData = await productsRes.json();
+          return {
+            ...family,
+            products: productsData.products || [],
+            productsCount: productsData.products?.length || 0
+          };
+        })
+      );
+      
+      setFamilies(familiesWithProducts);
     } catch (error) {
       console.error('Error fetching families:', error);
     } finally {
@@ -43,7 +57,7 @@ export default function FamiliesManagement() {
       if (response.ok) {
         setShowModal(false);
         setEditingFamily(null);
-        setFormData({ name: '', slug: '', description: '' });
+        setFormData({ name: '', slug: '' });
         fetchFamilies();
       }
     } catch (error) {
@@ -55,8 +69,7 @@ export default function FamiliesManagement() {
     setEditingFamily(family);
     setFormData({
       name: family.name,
-      slug: family.slug,
-      description: family.description || ''
+      slug: family.slug
     });
     setShowModal(true);
   };
@@ -212,7 +225,7 @@ export default function FamiliesManagement() {
                       Slug
                     </th>
                     <th style={{ padding: '1rem', textAlign: 'right', fontWeight: '600', color: '#475569', fontSize: '0.875rem' }}>
-                      الوصف
+                      المنتجات
                     </th>
                     <th style={{ padding: '1rem', textAlign: 'center', fontWeight: '600', color: '#475569', fontSize: '0.875rem' }}>
                       الإجراءات
@@ -228,8 +241,40 @@ export default function FamiliesManagement() {
                       <td style={{ padding: '1rem', color: '#64748b', fontSize: '0.875rem' }}>
                         {family.slug}
                       </td>
-                      <td style={{ padding: '1rem', color: '#64748b', fontSize: '0.875rem' }}>
-                        {family.description || '-'}
+                      <td style={{ padding: '1rem' }}>
+                        {family.productsCount > 0 ? (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
+                            {family.products.slice(0, 3).map(product => (
+                              <span
+                                key={product.id}
+                                style={{
+                                  padding: '0.25rem 0.625rem',
+                                  background: '#f0fdf4',
+                                  color: '#16a34a',
+                                  borderRadius: '0.375rem',
+                                  fontSize: '0.75rem',
+                                  fontWeight: '500'
+                                }}
+                              >
+                                {product.name}
+                              </span>
+                            ))}
+                            {family.productsCount > 3 && (
+                              <span style={{ 
+                                padding: '0.25rem 0.625rem',
+                                color: '#64748b',
+                                fontSize: '0.75rem',
+                                fontWeight: '500'
+                              }}>
+                                +{family.productsCount - 3} منتج
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+                            لا توجد منتجات
+                          </span>
+                        )}
                       </td>
                       <td style={{ padding: '1rem', textAlign: 'center' }}>
                         <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>

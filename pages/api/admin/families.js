@@ -9,6 +9,21 @@ export default async function handler(req, res) {
   try {
     // GET - جلب جميع العائلات
     if (req.method === 'GET') {
+      const { id, includeProducts } = req.query;
+      
+      // إذا كان هناك ID وطلب المنتجات
+      if (id && includeProducts === 'true') {
+        const { data: productsData, error: productsError } = await supabase
+          .from('products')
+          .select('id, name, slug')
+          .eq('family_id', id)
+          .order('name');
+        
+        if (productsError) throw productsError;
+        return res.status(200).json({ products: productsData });
+      }
+      
+      // جلب جميع العائلات
       const { data, error } = await supabase
         .from('families')
         .select('*')
