@@ -3,10 +3,13 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
+const ITEMS_PER_PAGE = 20;
+
 export default function AdminBrands() {
   const [brands, setBrands] = useState([]);
   const [families, setFamilies] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingBrand, setEditingBrand] = useState(null);
@@ -23,7 +26,6 @@ export default function AdminBrands() {
   });
   const [uploading, setUploading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 20;
 
   useEffect(() => {
     fetchData();
@@ -62,8 +64,8 @@ export default function AdminBrands() {
       setBrands(brandsWithFamilies);
       setFamilies(familiesData);
     } catch (err) {
+      setError(err.message);
       console.error('Error fetching data:', err);
-      alert('خطأ في تحميل البيانات: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -130,36 +132,6 @@ export default function AdminBrands() {
         ? prev.selectedFamilies.filter(id => id !== familyId)
         : [...prev.selectedFamilies, familyId]
     }));
-  };
-
-  const handleImageUpload = async (e, type) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    try {
-      setUploading(true);
-      
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${formData.slug || 'brand'}-${type}-${Date.now()}.${fileExt}`;
-      const filePath = `brands/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('brands')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      setFormData(prev => ({
-        ...prev,
-        [`${type}_url`]: filePath
-      }));
-
-      alert(`تم رفع ${type === 'logo' ? 'الشعار' : type === 'banner' ? 'البنر' : 'الغلاف'} بنجاح!`);
-    } catch (err) {
-      alert(`خطأ في رفع الصورة: ${err.message}`);
-    } finally {
-      setUploading(false);
-    }
   };
 
   const handleSubmit = async (e) => {
@@ -266,18 +238,35 @@ export default function AdminBrands() {
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedBrands = filteredBrands.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
   if (loading && brands.length === 0) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(to bottom right, #f9fafb, #f3f4f6)' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ width: '64px', height: '64px', border: '4px solid #e5e7eb', borderTop: '4px solid #2563eb', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px' }} />
-          <p style={{ color: '#6b7280', fontSize: '18px' }}>جاري تحميل الماركات...</p>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg">جاري تحميل الماركات...</p>
         </div>
-        <style jsx>{`
-          @keyframes spin {
-            to { transform: rotate(360deg); }
-          }
-        `}</style>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="bg-white rounded-xl shadow-lg p-8 max-w-md">
+          <div className="text-red-600 text-5xl mb-4 text-center">⚠️</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">خطأ في تحميل البيانات</h2>
+          <p className="text-gray-600 text-center mb-6">{error}</p>
+          <button
+            onClick={fetchData}
+            className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+          >
+            إعادة المحاولة
+          </button>
+        </div>
       </div>
     );
   }
@@ -285,161 +274,214 @@ export default function AdminBrands() {
   return (
     <>
       <Head>
-        <title>إدارة الماركات | Trade for Egypt</title>
+        <title>إدارة الماركات - لوحة التحكم</title>
         <meta name="robots" content="noindex, nofollow" />
       </Head>
 
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom right, #f9fafb, #f3f4f6)', padding: '32px 16px' }} dir="rtl">
-        <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
-          {/* Header */}
-          <div style={{ background: 'white', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', padding: '24px', marginBottom: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '16px' }}>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100" dir="rtl">
+        {/* Header */}
+        <header className="bg-white shadow-md border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="flex items-center justify-between">
               <div>
-                <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: '#111827', marginBottom: '8px' }}>إدارة الماركات</h1>
-                <p style={{ color: '#6b7280' }}>إضافة وتعديل وحذف الماركات</p>
+                <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                  <span className="text-4xl">🏢</span>
+                  إدارة الماركات
+                </h1>
+                <p className="text-sm text-gray-600 mt-2">
+                  إجمالي {brands.length} ماركة
+                </p>
               </div>
-              <Link href="/admin" style={{ padding: '12px 24px', background: '#4b5563', color: 'white', borderRadius: '8px', textDecoration: 'none', display: 'inline-block', transition: 'background 0.3s' }}>
+              <Link
+                href="/admin"
+                className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-medium shadow-sm flex items-center gap-2"
+              >
+                <span className="text-xl">←</span>
                 العودة للوحة التحكم
               </Link>
             </div>
+          </div>
+        </header>
 
-            {/* Stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-              <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '16px' }}>
-                <div style={{ color: '#2563eb', fontSize: '24px', fontWeight: 'bold' }}>{brands.length}</div>
-                <div style={{ color: '#1e40af', fontSize: '14px' }}>إجمالي الماركات</div>
+        {/* Main Content */}
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Stats Summary */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-3xl">🏢</span>
+                <h3 className="text-sm font-medium text-gray-600">إجمالي الماركات</h3>
               </div>
-              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '16px' }}>
-                <div style={{ color: '#16a34a', fontSize: '24px', fontWeight: 'bold' }}>{families.length}</div>
-                <div style={{ color: '#15803d', fontSize: '14px' }}>إجمالي العائلات</div>
-              </div>
-              <div style={{ background: '#faf5ff', border: '1px solid #e9d5ff', borderRadius: '8px', padding: '16px' }}>
-                <div style={{ color: '#9333ea', fontSize: '24px', fontWeight: 'bold' }}>{filteredBrands.length}</div>
-                <div style={{ color: '#7e22ce', fontSize: '14px' }}>نتائج البحث</div>
-              </div>
+              <p className="text-3xl font-bold text-gray-900">{brands.length}</p>
             </div>
-
-            {/* Search and Add */}
-            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-              <input
-                type="text"
-                placeholder="ابحث عن ماركة..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={{ flex: '1', minWidth: '200px', padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '16px' }}
-              />
-              <button
-                onClick={() => handleOpenModal()}
-                style={{ padding: '12px 24px', background: '#2563eb', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '500', whiteSpace: 'nowrap' }}
-              >
-                ➕ إضافة ماركة جديدة
-              </button>
+            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-3xl">📂</span>
+                <h3 className="text-sm font-medium text-gray-600">العائلات</h3>
+              </div>
+              <p className="text-3xl font-bold text-green-600">{families.length}</p>
+            </div>
+            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-3xl">🔍</span>
+                <h3 className="text-sm font-medium text-gray-600">نتائج البحث</h3>
+              </div>
+              <p className="text-3xl font-bold text-blue-600">{filteredBrands.length}</p>
+            </div>
+            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-3xl">📄</span>
+                <h3 className="text-sm font-medium text-gray-600">الصفحة الحالية</h3>
+              </div>
+              <p className="text-3xl font-bold text-purple-600">{currentPage} / {totalPages || 1}</p>
             </div>
           </div>
 
-          {/* Brands Table */}
-          <div style={{ background: 'white', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', overflow: 'hidden' }}>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
-                  <tr>
-                    <th style={{ padding: '16px 24px', textAlign: 'right', fontSize: '14px', fontWeight: '600', color: '#374151' }}>#</th>
-                    <th style={{ padding: '16px 24px', textAlign: 'right', fontSize: '14px', fontWeight: '600', color: '#374151' }}>الشعار</th>
-                    <th style={{ padding: '16px 24px', textAlign: 'right', fontSize: '14px', fontWeight: '600', color: '#374151' }}>الاسم</th>
-                    <th style={{ padding: '16px 24px', textAlign: 'right', fontSize: '14px', fontWeight: '600', color: '#374151' }}>Slug</th>
-                    <th style={{ padding: '16px 24px', textAlign: 'right', fontSize: '14px', fontWeight: '600', color: '#374151' }}>العائلات</th>
-                    <th style={{ padding: '16px 24px', textAlign: 'center', fontSize: '14px', fontWeight: '600', color: '#374151' }}>الإجراءات</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedBrands.map((brand, index) => (
-                    <tr key={brand.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                      <td style={{ padding: '16px 24px', fontSize: '14px', color: '#6b7280' }}>{startIndex + index + 1}</td>
-                      <td style={{ padding: '16px 24px' }}>
-                        {brand.logo_url ? (
-                          <img 
-                            src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${brand.logo_url}`}
-                            alt={brand.name}
-                            style={{ width: '48px', height: '48px', objectFit: 'contain', borderRadius: '4px' }}
-                          />
-                        ) : (
-                          <div style={{ width: '48px', height: '48px', background: '#e5e7eb', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: '#9ca3af' }}>
-                            لا يوجد
-                          </div>
-                        )}
-                      </td>
-                      <td style={{ padding: '16px 24px', fontSize: '14px', fontWeight: '500', color: '#111827' }}>{brand.name}</td>
-                      <td style={{ padding: '16px 24px', fontSize: '14px', color: '#6b7280', fontFamily: 'monospace' }}>{brand.slug}</td>
-                      <td style={{ padding: '16px 24px' }}>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                          {brand.families?.slice(0, 3).map(family => (
-                            <span key={family.id} style={{ padding: '4px 8px', background: '#dbeafe', color: '#1e40af', fontSize: '12px', borderRadius: '4px' }}>
-                              {family.name}
-                            </span>
-                          ))}
-                          {brand.families?.length > 3 && (
-                            <span style={{ padding: '4px 8px', background: '#f3f4f6', color: '#6b7280', fontSize: '12px', borderRadius: '4px' }}>
-                              +{brand.families.length - 3}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td style={{ padding: '16px 24px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
-                          <button
-                            onClick={() => handleOpenModal(brand)}
-                            style={{ padding: '8px 16px', background: '#eab308', color: 'white', borderRadius: '4px', border: 'none', cursor: 'pointer', fontSize: '14px' }}
-                          >
-                            ✏️ تعديل
-                          </button>
-                          <button
-                            onClick={() => handleDelete(brand.id, brand.name)}
-                            style={{ padding: '8px 16px', background: '#ef4444', color: 'white', borderRadius: '4px', border: 'none', cursor: 'pointer', fontSize: '14px' }}
-                          >
-                            🗑️ حذف
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {/* Search and Add */}
+          <div className="bg-white rounded-xl shadow-lg p-6 mb-8 border border-gray-200">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                  <span className="text-lg">🔍</span>
+                  بحث
+                </label>
+                <input
+                  type="text"
+                  placeholder="ابحث عن ماركة..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                />
+              </div>
+              <div className="md:pt-7">
+                <button
+                  onClick={() => handleOpenModal()}
+                  className="w-full md:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                >
+                  <span className="text-xl">➕</span>
+                  إضافة ماركة جديدة
+                </button>
+              </div>
             </div>
+            {searchTerm && (
+              <div className="mt-4 flex items-center justify-between">
+                <p className="text-sm text-gray-600">
+                  عرض {filteredBrands.length} من {brands.length} ماركة
+                </p>
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  إعادة تعيين البحث
+                </button>
+              </div>
+            )}
+          </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div style={{ background: '#f9fafb', padding: '16px 24px', borderTop: '1px solid #e5e7eb' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-                  <div style={{ fontSize: '14px', color: '#6b7280' }}>
-                    عرض {startIndex + 1} - {Math.min(startIndex + ITEMS_PER_PAGE, filteredBrands.length)} من {filteredBrands.length}
+          {/* Brands Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {paginatedBrands.map((brand) => (
+              <div
+                key={brand.id}
+                className="bg-white rounded-xl shadow-lg border border-gray-200 hover:shadow-xl transition overflow-hidden"
+              >
+                {/* Header */}
+                <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 text-white">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-2xl font-bold">{brand.name}</h3>
+                    <span className="text-3xl">🏢</span>
                   </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                  <p className="text-sm text-blue-100 font-mono">
+                    {brand.slug}
+                  </p>
+                </div>
+
+                {/* Body */}
+                <div className="p-6">
+                  {/* Logo */}
+                  {brand.logo_url && (
+                    <div className="mb-4 flex justify-center">
+                      <img 
+                        src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${brand.logo_url}`}
+                        alt={brand.name}
+                        className="h-16 object-contain"
+                      />
+                    </div>
+                  )}
+
+                  {/* Families */}
+                  <div className="mb-4">
+                    <p className="text-xs font-medium text-gray-600 mb-2">العائلات:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {brand.families?.slice(0, 3).map(family => (
+                        <span key={family.id} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                          {family.name}
+                        </span>
+                      ))}
+                      {brand.families?.length > 3 && (
+                        <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                          +{brand.families.length - 3}
+                        </span>
+                      )}
+                      {(!brand.families || brand.families.length === 0) && (
+                        <span className="text-xs text-gray-400">لا توجد عائلات</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-2 pt-4 border-t border-gray-200">
                     <button
-                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                      style={{ padding: '8px 16px', background: 'white', border: '1px solid #d1d5db', borderRadius: '8px', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', opacity: currentPage === 1 ? 0.5 : 1 }}
+                      onClick={() => handleOpenModal(brand)}
+                      className="flex-1 px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition text-sm font-medium"
                     >
-                      السابق
+                      ✏️ تعديل
                     </button>
-                    <span style={{ padding: '8px 16px', background: '#2563eb', color: 'white', borderRadius: '8px' }}>
-                      {currentPage} / {totalPages}
-                    </span>
                     <button
-                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                      disabled={currentPage === totalPages}
-                      style={{ padding: '8px 16px', background: 'white', border: '1px solid #d1d5db', borderRadius: '8px', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', opacity: currentPage === totalPages ? 0.5 : 1 }}
+                      onClick={() => handleDelete(brand.id, brand.name)}
+                      className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition text-sm font-medium"
                     >
-                      التالي
+                      🗑️ حذف
                     </button>
                   </div>
                 </div>
               </div>
-            )}
+            ))}
           </div>
-        </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-gray-600">
+                  عرض {startIndex + 1} - {Math.min(startIndex + ITEMS_PER_PAGE, filteredBrands.length)} من {filteredBrands.length}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    السابق
+                  </button>
+                  <span className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium">
+                    {currentPage} / {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    التالي
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </main>
       </div>
 
-      {/* Modal - سيتم إضافته في الجزء التالي */}
+      {/* Modal - will be added in next iteration */}
     </>
   );
 }
