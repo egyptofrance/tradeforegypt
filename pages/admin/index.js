@@ -283,6 +283,14 @@ export default function AdminDashboard() {
               description={`من ${stats?.stats?.expectedPages?.toLocaleString() || 0} متوقعة`}
               color="#94a3b8"
             />
+            <StatCard
+              icon="🚀"
+              title="توليد الصفحات"
+              value="RUN TEST"
+              description="اختبار وتوليد الصفحات"
+              color="#8b5cf6"
+              link="/admin/generate-pages"
+            />
           </div>
 
           {/* Progress Section */}
