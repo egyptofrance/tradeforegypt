@@ -6,6 +6,8 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [generating, setGenerating] = useState(false);
+  const [generateMessage, setGenerateMessage] = useState('');
 
   useEffect(() => {
     fetchStats();
@@ -22,6 +24,44 @@ export default function AdminDashboard() {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGeneratePages = async () => {
+    if (generating) return;
+    
+    if (!confirm('هل أنت متأكد من بدء توليد الصفحات؟ قد تستغرق العملية بعض الوقت.')) {
+      return;
+    }
+
+    try {
+      setGenerating(true);
+      setGenerateMessage('جاري توليد الصفحات...');
+
+      const response = await fetch('/api/admin/generate-pages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ limit: 100 })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setGenerateMessage(`✅ ${data.message}`);
+        // تحديث الإحصائيات
+        setTimeout(() => {
+          fetchStats();
+          setGenerateMessage('');
+        }, 3000);
+      } else {
+        setGenerateMessage(`❌ خطأ: ${data.error}`);
+        setTimeout(() => setGenerateMessage(''), 5000);
+      }
+    } catch (error) {
+      setGenerateMessage(`❌ خطأ: ${error.message}`);
+      setTimeout(() => setGenerateMessage(''), 5000);
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -522,29 +562,43 @@ export default function AdminDashboard() {
                 <p style={{ fontSize: '0.875rem', color: '#64748b', margin: 0 }}>إدارة ومعاينة المواقع</p>
               </Link>
               <button 
+                onClick={handleGeneratePages}
+                disabled={generating}
                 style={{
-                  background: '#f8fafc',
+                  background: generating ? '#e2e8f0' : '#f8fafc',
                   border: '1px solid #e2e8f0',
                   borderRadius: '0.5rem',
                   padding: '1.25rem',
-                  cursor: 'pointer',
+                  cursor: generating ? 'not-allowed' : 'pointer',
                   textAlign: 'right',
-                  transition: 'all 0.2s'
+                  transition: 'all 0.2s',
+                  opacity: generating ? 0.6 : 1
                 }}
                 onMouseOver={(e) => {
-                  e.currentTarget.style.background = '#f1f5f9';
-                  e.currentTarget.style.borderColor = '#3b82f6';
+                  if (!generating) {
+                    e.currentTarget.style.background = '#f1f5f9';
+                    e.currentTarget.style.borderColor = '#3b82f6';
+                  }
                 }}
                 onMouseOut={(e) => {
-                  e.currentTarget.style.background = '#f8fafc';
-                  e.currentTarget.style.borderColor = '#e2e8f0';
+                  if (!generating) {
+                    e.currentTarget.style.background = '#f8fafc';
+                    e.currentTarget.style.borderColor = '#e2e8f0';
+                  }
                 }}
               >
-                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🚀</div>
+                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{generating ? '⏳' : '🚀'}</div>
                 <h3 style={{ fontWeight: 'bold', fontSize: '1rem', color: '#1e293b', marginBottom: '0.25rem' }}>
                   توليد الصفحات
                 </h3>
-                <p style={{ fontSize: '0.875rem', color: '#64748b', margin: 0 }}>بدء توليد تلقائي</p>
+                <p style={{ fontSize: '0.875rem', color: '#64748b', margin: 0 }}>
+                  {generating ? 'جاري التوليد...' : 'بدء توليد تلقائي'}
+                </p>
+                {generateMessage && (
+                  <p style={{ fontSize: '0.75rem', color: generateMessage.includes('✅') ? '#10b981' : '#ef4444', margin: '0.5rem 0 0 0', fontWeight: '600' }}>
+                    {generateMessage}
+                  </p>
+                )}
               </button>
               <button
                 onClick={fetchStats}
