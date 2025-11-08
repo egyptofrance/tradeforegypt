@@ -1,5 +1,7 @@
 import Head from 'next/head';
 import Image from 'next/image';
+import Link from 'next/link';
+import Layout from '@/components/layout/Layout';
 import { getBrandBySlug, getProductBySlug, getFamilyById, getRating, checkBrandProductRelation } from '@/lib/supabase';
 import { generateAllSEO } from '@/lib/seo-generator';
 import { generateAllSchemas } from '@/lib/schema-generator';
@@ -25,36 +27,6 @@ const KEYWORD_TRANSLATIONS = {
 
 export default function ProductPage({ brand, product, family, keyword, seo, schemas, content, prevNext, images, rating }) {
   const keywordAr = KEYWORD_TRANSLATIONS[keyword] || keyword;
-  
-  // دالة لتمييز الكلمة البحثية في النص
-  const highlightKeyword = (text) => {
-    if (!text) return '';
-    
-    const keywords = [
-      keywordAr,
-      brand.name,
-      product.name,
-      `${keywordAr} ${brand.name}`,
-      `${brand.name} ${product.name}`,
-      `${keywordAr} ${brand.name} ${product.name}`
-    ];
-    
-    let highlightedText = text;
-    
-    keywords.forEach((kw, index) => {
-      const regex = new RegExp(`(${kw})`, 'gi');
-      const styles = [
-        'font-weight: bold; color: #0066cc;',
-        'font-weight: bold; font-style: italic;',
-        'font-weight: bold; text-decoration: underline;',
-        'font-weight: bold; color: #cc6600;'
-      ];
-      const style = styles[index % styles.length];
-      highlightedText = highlightedText.replace(regex, `<span style="${style}">$1</span>`);
-    });
-    
-    return highlightedText;
-  };
   
   return (
     <>
@@ -88,375 +60,285 @@ export default function ProductPage({ brand, product, family, keyword, seo, sche
       {/* Schema Markup */}
       <SchemaMarkup schemas={schemas} />
       
-      {/* Main Content */}
-      <div className="page-container">
-        {/* Header */}
-        <header className="page-header">
-          <div className="brand-logo">
-            <Image 
-              src={images.logo} 
-              alt={getImageAltText(brand, null, 'logo')}
-              width={120}
-              height={120}
-              priority
-            />
-          </div>
-          <div className="brand-info">
-            <h1 className="main-title" dangerouslySetInnerHTML={{ __html: highlightKeyword(seo.h1) }} />
-            {rating && rating.rating_value && (
-              <div className="rating">
-                <span className="stars">{'⭐'.repeat(Math.round(rating.rating_value))}</span>
-                <span className="rating-text">{rating.rating_value} ({rating.rating_count} تقييم)</span>
+      <Layout>
+        {/* Banner Section */}
+        <section className="section banner-service bg-grey-60 position-relative">
+          <div className="box-banner-abs">
+            <div className="container">
+              <div className="row align-items-center">
+                <div className="col-xxl-8 col-xl-9 col-lg-12">
+                  <div className="box-banner-service">
+                    {/* Breadcrumb */}
+                    <Breadcrumb brand={brand} product={product} keyword={keyword} />
+                    
+                    {/* Main Title */}
+                    <h1 className="color-brand-1 mb-20 mt-20">
+                      {keywordAr} {brand.name_ar || brand.name} {product.name}
+                    </h1>
+                    
+                    {/* Rating */}
+                    {rating && rating.rating_value && (
+                      <div className="rating mb-20">
+                        <span className="stars">{'⭐'.repeat(Math.round(rating.rating_value))}</span>
+                        <span className="rating-text ms-2">{rating.rating_value} ({rating.rating_count} تقييم)</span>
+                      </div>
+                    )}
+                    
+                    {/* Description */}
+                    <div className="row">
+                      <div className="col-lg-10">
+                        <p className="font-md color-grey-500" dangerouslySetInnerHTML={{ __html: content.intro }} />
+                      </div>
+                    </div>
+                    
+                    {/* Buttons */}
+                    <div className="box-button mt-30">
+                      <Link href={`/${brand.slug}`} className="btn btn-brand-1 hover-up">
+                        عرض جميع منتجات {brand.name_ar || brand.name}
+                        <svg className="w-6 h-6 icon-16 ms-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                      </Link>
+                      <Link href={`#contact`} className="btn btn-default ms-2 hover-up">
+                        معلومات التواصل
+                        <svg className="w-6 h-6 icon-16 ms-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
               </div>
-            )}
+            </div>
           </div>
-        </header>
-        
-        {/* Breadcrumb */}
-        <Breadcrumb brand={brand} product={product} keyword={keyword} />
-        
-        {/* Banner Image */}
-        <div className="banner-image">
-          <Image 
-            src={images.banner} 
-            alt={getImageAltText(brand, product, 'banner')}
-            width={1200}
-            height={400}
-            priority
-          />
-        </div>
-        
-        {/* Main Content */}
-        <main className="main-content">
-          {/* Introduction */}
-          <section className="content-section intro-section">
-            <div dangerouslySetInnerHTML={{ __html: highlightKeyword(content.intro) }} />
-          </section>
           
-          {/* Product Images Gallery */}
-          <section className="product-images">
-            <h2 dangerouslySetInnerHTML={{ __html: highlightKeyword(`صور ${brand.name} ${product.name}`) }} />
-            <div className="images-grid">
+          {/* Banner Image */}
+          <div className="row m-0">
+            <div className="col-xxl-5 col-xl-6 col-lg-6" />
+            <div className="col-xxl-7 col-xl-6 col-lg-6 pr-0">
+              <div className="d-none d-lg-block ps-5">
+                <Image 
+                  className="w-100 d-block rounded" 
+                  src={images.banner} 
+                  alt={getImageAltText(brand, product, 'banner')}
+                  width={800}
+                  height={500}
+                  priority
+                  style={{ objectFit: 'cover' }}
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* About Brand Section */}
+        <section className="section mt-50">
+          <div className="container">
+            <div className="box-business-rd">
+              <div className="row align-items-center">
+                <div className="col-lg-6">
+                  <div className="box-image-rd">
+                    <Image 
+                      src={images.logo} 
+                      alt={getImageAltText(brand, null, 'logo')}
+                      width={500}
+                      height={500}
+                      className="img-responsive"
+                    />
+                  </div>
+                </div>
+                <div className="col-lg-6">
+                  <span className="btn btn-tag">عن الماركة</span>
+                  <h3 className="color-brand-1 mt-10 mb-15">عن {brand.name_ar || brand.name}</h3>
+                  <div className="font-md color-grey-400" dangerouslySetInnerHTML={{ __html: content.brandSection }} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Services Section */}
+        <section className="section mt-50 bg-grey-60 pt-50 pb-50">
+          <div className="container">
+            <div className="text-center">
+              <h2 className="color-brand-1 mb-20">خدمات {keywordAr} {brand.name_ar || brand.name} {product.name}</h2>
+              <p className="font-lg color-gray-500">نقدم لكم أفضل الخدمات والدعم الفني المتكامل</p>
+            </div>
+            
+            <div className="row mt-50">
+              <div className="col-lg-10 mx-auto">
+                <div className="font-md color-grey-400" dangerouslySetInnerHTML={{ __html: content.servicesSection }} />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Product Images Gallery */}
+        <section className="section mt-50">
+          <div className="container">
+            <div className="text-center mb-40">
+              <h2 className="color-brand-1">صور {brand.name_ar || brand.name} {product.name}</h2>
+            </div>
+            <div className="row">
               {images.productImages.map((img, index) => (
-                <div key={index} className="image-item">
-                  <Image 
-                    src={img} 
-                    alt={`${brand.name} ${product.name} - صورة ${index + 1}`}
-                    width={400}
-                    height={400}
-                    loading="lazy"
-                  />
+                <div key={index} className="col-lg-4 col-md-6 mb-30">
+                  <div className="card-grid-style-2 hover-up">
+                    <div className="image-box">
+                      <Image 
+                        src={img} 
+                        alt={`${brand.name} ${product.name} - صورة ${index + 1}`}
+                        width={400}
+                        height={400}
+                        className="img-responsive rounded"
+                        loading="lazy"
+                      />
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
-          </section>
-          
-          {/* About Brand */}
-          <section className="content-section brand-section">
-            <h2 dangerouslySetInnerHTML={{ __html: highlightKeyword(`عن ${brand.name}`) }} />
-            <div dangerouslySetInnerHTML={{ __html: highlightKeyword(content.brandSection) }} />
-          </section>
-          
-          {/* Services */}
-          <section className="content-section services-section">
-            <h2 dangerouslySetInnerHTML={{ __html: highlightKeyword(`خدمات ${keywordAr} ${brand.name} ${product.name}`) }} />
-            <div dangerouslySetInnerHTML={{ __html: highlightKeyword(content.servicesSection) }} />
-          </section>
-          
-          {/* Contact Information */}
-          <section className="content-section contact-section">
-            <h3 dangerouslySetInnerHTML={{ __html: highlightKeyword(`معلومات التواصل مع ${keywordAr} ${brand.name}`) }} />
-            <div className="contact-info">
-              <div className="contact-item">
-                <h4>📞 الهاتف</h4>
-                <p>للتواصل مع <strong className="keyword">{keywordAr} {brand.name}</strong>، يرجى الاتصال على الأرقام المتوفرة في الموقع الرسمي.</p>
+          </div>
+        </section>
+
+        {/* Contact Section */}
+        <section className="section mt-50" id="contact">
+          <div className="container">
+            <div className="box-contact">
+              <div className="row align-items-center">
+                <div className="col-lg-12">
+                  <h3 className="color-brand-1 mb-15 text-center">معلومات التواصل مع {keywordAr} {brand.name_ar || brand.name}</h3>
+                </div>
               </div>
-              <div className="contact-item">
-                <h4>📍 العنوان</h4>
-                <p>يمكنك زيارة <strong className="keyword">{keywordAr} {brand.name}</strong> في الفروع المنتشرة في جميع أنحاء مصر.</p>
-              </div>
-              <div className="contact-item">
-                <h4>🕐 مواعيد العمل</h4>
-                <p><strong className="keyword">{keywordAr} {brand.name}</strong> يعمل من السبت إلى الخميس من 9 صباحاً حتى 6 مساءً.</p>
+              <div className="row mt-40">
+                <div className="col-lg-4 col-md-6 mb-30">
+                  <div className="card-grid-style-3 hover-up">
+                    <div className="grid-3-img">
+                      <div className="icon-contact">
+                        <svg className="w-6 h-6 icon-32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                        </svg>
+                      </div>
+                    </div>
+                    <h4 className="color-brand-1 mb-10">📞 الهاتف</h4>
+                    <p className="color-grey-500">للتواصل مع {keywordAr} {brand.name_ar || brand.name}، يرجى الاتصال على الأرقام المتوفرة في الموقع الرسمي.</p>
+                  </div>
+                </div>
+                <div className="col-lg-4 col-md-6 mb-30">
+                  <div className="card-grid-style-3 hover-up">
+                    <div className="grid-3-img">
+                      <div className="icon-contact">
+                        <svg className="w-6 h-6 icon-32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </div>
+                    </div>
+                    <h4 className="color-brand-1 mb-10">📍 العنوان</h4>
+                    <p className="color-grey-500">يمكنك زيارة {keywordAr} {brand.name_ar || brand.name} في الفروع المنتشرة في جميع أنحاء مصر.</p>
+                  </div>
+                </div>
+                <div className="col-lg-4 col-md-6 mb-30">
+                  <div className="card-grid-style-3 hover-up">
+                    <div className="grid-3-img">
+                      <div className="icon-contact">
+                        <svg className="w-6 h-6 icon-32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                    </div>
+                    <h4 className="color-brand-1 mb-10">🕐 مواعيد العمل</h4>
+                    <p className="color-grey-500">{keywordAr} {brand.name_ar || brand.name} يعمل من السبت إلى الخميس من 9 صباحاً حتى 6 مساءً.</p>
+                  </div>
+                </div>
               </div>
             </div>
-          </section>
-          
-          {/* FAQ Section */}
-          <section className="content-section faq-section">
-            <h3 dangerouslySetInnerHTML={{ __html: highlightKeyword(`أسئلة شائعة عن ${keywordAr} ${brand.name} ${product.name}`) }} />
-            <div className="faq-list">
-              <div className="faq-item">
-                <h4 className="faq-question" dangerouslySetInnerHTML={{ __html: highlightKeyword(`ما هو عنوان ${keywordAr} ${brand.name} ${product.name}؟`) }} />
-                <p className="faq-answer">يمكنك العثور على عنوان <strong className="keyword">{keywordAr} {brand.name} {product.name}</strong> في هذه الصفحة مع جميع معلومات التواصل.</p>
-              </div>
-              <div className="faq-item">
-                <h4 className="faq-question" dangerouslySetInnerHTML={{ __html: highlightKeyword(`كيف أتواصل مع ${keywordAr} ${brand.name}؟`) }} />
-                <p className="faq-answer">يمكنك التواصل مع <strong className="keyword">{keywordAr} {brand.name}</strong> عبر الأرقام والعناوين المتوفرة في هذه الصفحة.</p>
-              </div>
-              <div className="faq-item">
-                <h4 className="faq-question" dangerouslySetInnerHTML={{ __html: highlightKeyword(`هل ${keywordAr} ${brand.name} معتمد؟`) }} />
-                <p className="faq-answer">نعم، جميع معلومات <strong className="keyword">{keywordAr} {brand.name}</strong> المذكورة هنا معتمدة ومحدثة.</p>
+          </div>
+        </section>
+
+        {/* FAQ Section */}
+        <section className="section mt-50 bg-grey-60 pt-50 pb-50">
+          <div className="container">
+            <div className="text-center mb-40">
+              <h3 className="color-brand-1">أسئلة شائعة عن {keywordAr} {brand.name_ar || brand.name} {product.name}</h3>
+            </div>
+            <div className="row">
+              <div className="col-lg-8 mx-auto">
+                <div className="accordion" id="faqAccordion">
+                  <div className="accordion-item mb-20">
+                    <h2 className="accordion-header" id="heading1">
+                      <button className="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse1">
+                        ما هو عنوان {keywordAr} {brand.name_ar || brand.name} {product.name}؟
+                      </button>
+                    </h2>
+                    <div id="collapse1" className="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                      <div className="accordion-body">
+                        يمكنك العثور على عنوان {keywordAr} {brand.name_ar || brand.name} {product.name} في هذه الصفحة مع جميع معلومات التواصل.
+                      </div>
+                    </div>
+                  </div>
+                  <div className="accordion-item mb-20">
+                    <h2 className="accordion-header" id="heading2">
+                      <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse2">
+                        كيف أتواصل مع {keywordAr} {brand.name_ar || brand.name}؟
+                      </button>
+                    </h2>
+                    <div id="collapse2" className="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                      <div className="accordion-body">
+                        يمكنك التواصل مع {keywordAr} {brand.name_ar || brand.name} عبر الأرقام والعناوين المتوفرة في هذه الصفحة.
+                      </div>
+                    </div>
+                  </div>
+                  <div className="accordion-item mb-20">
+                    <h2 className="accordion-header" id="heading3">
+                      <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse3">
+                        هل {keywordAr} {brand.name_ar || brand.name} معتمد؟
+                      </button>
+                    </h2>
+                    <div id="collapse3" className="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                      <div className="accordion-body">
+                        نعم، جميع معلومات {keywordAr} {brand.name_ar || brand.name} المذكورة هنا معتمدة ومحدثة.
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-          </section>
-          
-          {/* Related Keywords */}
-          <section className="content-section related-keywords">
-            <h4>كلمات بحثية ذات صلة:</h4>
-            <div className="keywords-list">
-              <span className="keyword-tag">{keywordAr} {brand.name}</span>
-              <span className="keyword-tag">{brand.name} {product.name}</span>
-              <span className="keyword-tag">رقم {brand.name}</span>
-              <span className="keyword-tag">عنوان {brand.name}</span>
-              <span className="keyword-tag">{keywordAr} {brand.name} {product.name}</span>
-              <span className="keyword-tag">{brand.name} مصر</span>
-              <span className="keyword-tag">{product.name} {brand.name}</span>
-              <span className="keyword-tag">{family.name} {brand.name}</span>
+          </div>
+        </section>
+
+        {/* Related Keywords */}
+        <section className="section mt-50">
+          <div className="container">
+            <div className="text-center mb-30">
+              <h4 className="color-brand-1">كلمات بحثية ذات صلة</h4>
             </div>
-          </section>
-          
-          {/* Conclusion */}
-          <section className="content-section conclusion-section">
-            <div dangerouslySetInnerHTML={{ __html: highlightKeyword(content.conclusion) }} />
-          </section>
-        </main>
-        
+            <div className="text-center">
+              <Link href={`/${brand.slug}`} className="btn btn-tag me-2 mb-2">{keywordAr} {brand.name_ar || brand.name}</Link>
+              <Link href={`/${brand.slug}/${product.slug}`} className="btn btn-tag me-2 mb-2">{brand.name_ar || brand.name} {product.name}</Link>
+              <span className="btn btn-tag me-2 mb-2">رقم {brand.name_ar || brand.name}</span>
+              <span className="btn btn-tag me-2 mb-2">عنوان {brand.name_ar || brand.name}</span>
+              <span className="btn btn-tag me-2 mb-2">{keywordAr} {brand.name_ar || brand.name} {product.name}</span>
+              <span className="btn btn-tag me-2 mb-2">{brand.name_ar || brand.name} مصر</span>
+              <span className="btn btn-tag me-2 mb-2">{product.name} {brand.name_ar || brand.name}</span>
+              <span className="btn btn-tag me-2 mb-2">{family.name} {brand.name_ar || brand.name}</span>
+            </div>
+          </div>
+        </section>
+
+        {/* Conclusion */}
+        <section className="section mt-50 mb-50">
+          <div className="container">
+            <div className="row">
+              <div className="col-lg-10 mx-auto">
+                <div className="font-md color-grey-400 text-center" dangerouslySetInnerHTML={{ __html: content.conclusion }} />
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Previous/Next Links */}
         <PrevNextLinks prev={prevNext.prev} next={prevNext.next} />
-        
-        {/* Footer */}
-        <footer className="page-footer">
-          <p>آخر تحديث: {new Date().toLocaleDateString('ar-EG')}</p>
-          <p>جميع المعلومات محدثة ومعتمدة من <strong>{brand.name}</strong></p>
-        </footer>
-      </div>
-      
-      {/* Styles */}
-      <style jsx>{`
-        .page-container {
-          max-width: 1200px;
-          margin: 0 auto;
-          padding: 2rem;
-          font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
-          direction: rtl;
-          line-height: 1.8;
-        }
-        
-        .page-header {
-          display: flex;
-          align-items: center;
-          gap: 2rem;
-          margin-bottom: 2rem;
-          padding: 2rem;
-          background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-          border-radius: 12px;
-        }
-        
-        .brand-logo {
-          flex-shrink: 0;
-        }
-        
-        .main-title {
-          font-size: 2.5rem;
-          color: #1a1a1a;
-          margin: 0 0 1rem 0;
-          font-weight: 700;
-        }
-        
-        .rating {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          font-size: 1.1rem;
-        }
-        
-        .stars {
-          color: #ffc107;
-          font-size: 1.3rem;
-        }
-        
-        .banner-image {
-          width: 100%;
-          height: 400px;
-          position: relative;
-          border-radius: 12px;
-          overflow: hidden;
-          margin: 2rem 0;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        
-        .banner-image img {
-          object-fit: cover;
-        }
-        
-        .main-content {
-          background: white;
-          padding: 2rem;
-          border-radius: 12px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-        
-        .content-section {
-          margin-bottom: 3rem;
-          padding-bottom: 2rem;
-          border-bottom: 1px solid #e0e0e0;
-        }
-        
-        .content-section:last-child {
-          border-bottom: none;
-        }
-        
-        .content-section h2 {
-          font-size: 2rem;
-          color: #0066cc;
-          margin: 0 0 1.5rem 0;
-          font-weight: 600;
-        }
-        
-        .content-section h3 {
-          font-size: 1.6rem;
-          color: #cc6600;
-          margin: 0 0 1rem 0;
-          font-weight: 600;
-        }
-        
-        .content-section h4 {
-          font-size: 1.3rem;
-          color: #333;
-          margin: 0 0 0.8rem 0;
-          font-weight: 600;
-        }
-        
-        .content-section p {
-          font-size: 1.1rem;
-          color: #444;
-          line-height: 2;
-          margin-bottom: 1rem;
-        }
-        
-        .keyword {
-          font-weight: bold;
-          color: #0066cc;
-        }
-        
-        .product-images {
-          margin: 3rem 0;
-        }
-        
-        .images-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-          gap: 1.5rem;
-          margin-top: 1.5rem;
-        }
-        
-        .image-item {
-          position: relative;
-          border-radius: 8px;
-          overflow: hidden;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-          transition: transform 0.3s;
-        }
-        
-        .image-item:hover {
-          transform: scale(1.05);
-        }
-        
-        .contact-info {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-          gap: 2rem;
-          margin-top: 1.5rem;
-        }
-        
-        .contact-item {
-          padding: 1.5rem;
-          background: #f8f9fa;
-          border-radius: 8px;
-          border-right: 4px solid #0066cc;
-        }
-        
-        .faq-list {
-          margin-top: 1.5rem;
-        }
-        
-        .faq-item {
-          margin-bottom: 1.5rem;
-          padding: 1.5rem;
-          background: #f8f9fa;
-          border-radius: 8px;
-        }
-        
-        .faq-question {
-          color: #0066cc;
-          margin-bottom: 0.8rem;
-        }
-        
-        .faq-answer {
-          color: #555;
-        }
-        
-        .related-keywords {
-          background: #f0f8ff;
-          padding: 2rem;
-          border-radius: 8px;
-        }
-        
-        .keywords-list {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.8rem;
-          margin-top: 1rem;
-        }
-        
-        .keyword-tag {
-          display: inline-block;
-          padding: 0.5rem 1rem;
-          background: white;
-          border: 2px solid #0066cc;
-          border-radius: 20px;
-          color: #0066cc;
-          font-weight: 600;
-          font-size: 0.95rem;
-        }
-        
-        .page-footer {
-          margin-top: 3rem;
-          padding: 2rem;
-          text-align: center;
-          background: #f5f5f5;
-          border-radius: 8px;
-          color: #666;
-        }
-        
-        @media (max-width: 768px) {
-          .page-container {
-            padding: 1rem;
-          }
-          
-          .page-header {
-            flex-direction: column;
-            text-align: center;
-          }
-          
-          .main-title {
-            font-size: 1.8rem;
-          }
-          
-          .banner-image {
-            height: 250px;
-          }
-          
-          .images-grid {
-            grid-template-columns: 1fr;
-          }
-          
-          .contact-info {
-            grid-template-columns: 1fr;
-          }
-        }
-      `}</style>
+      </Layout>
     </>
   );
 }
