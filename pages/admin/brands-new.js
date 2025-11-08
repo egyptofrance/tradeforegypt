@@ -95,8 +95,10 @@ export default function AdminBrands() {
                 </p>
               </div>
               <div className="col-lg-4 text-end">
-                <Link href="/admin" className="btn btn-default" style={{background: '#10b981', color: '#fff', border: 'none'}}>
-                  ← العودة للوحة التحكم
+                <Link href="/admin">
+                  <a className="btn btn-default" style={{background: '#10b981', color: '#fff', border: 'none'}}>
+                    ← العودة للوحة التحكم
+                  </a>
                 </Link>
               </div>
             </div>
