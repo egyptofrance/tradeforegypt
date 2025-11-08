@@ -8,6 +8,11 @@ export default function FamiliesManagement() {
   const [showModal, setShowModal] = useState(false);
   const [editingFamily, setEditingFamily] = useState(null);
   const [formData, setFormData] = useState({ name: '', slug: '' });
+  const [showProductsModal, setShowProductsModal] = useState(false);
+  const [selectedFamily, setSelectedFamily] = useState(null);
+  const [familyProducts, setFamilyProducts] = useState([]);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [productFormData, setProductFormData] = useState({ name: '', slug: '', description: '' });
 
   useEffect(() => {
     fetchFamilies();
@@ -92,8 +97,82 @@ export default function FamiliesManagement() {
 
   const handleAddNew = () => {
     setEditingFamily(null);
-    setFormData({ name: '', slug: '', description: '' });
+    setFormData({ name: '', slug: '' });
     setShowModal(true);
+  };
+
+  const handleManageProducts = async (family) => {
+    setSelectedFamily(family);
+    setFamilyProducts(family.products || []);
+    setShowProductsModal(true);
+  };
+
+  const handleAddProduct = () => {
+    setEditingProduct(null);
+    setProductFormData({ name: '', slug: '', description: '' });
+  };
+
+  const handleEditProduct = (product) => {
+    setEditingProduct(product);
+    setProductFormData({
+      name: product.name,
+      slug: product.slug,
+      description: product.description || ''
+    });
+  };
+
+  const handleSaveProduct = async (e) => {
+    e.preventDefault();
+    try {
+      const method = editingProduct ? 'PUT' : 'POST';
+      const body = {
+        ...productFormData,
+        family_id: selectedFamily.id,
+        ...(editingProduct && { id: editingProduct.id })
+      };
+
+      const response = await fetch('/api/admin/products', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (response.ok) {
+        setEditingProduct(null);
+        setProductFormData({ name: '', slug: '', description: '' });
+        // Refresh products
+        const productsRes = await fetch(`/api/admin/families?id=${selectedFamily.id}&includeProducts=true`);
+        const productsData = await productsRes.json();
+        setFamilyProducts(productsData.products || []);
+        // Refresh families
+        fetchFamilies();
+      }
+    } catch (error) {
+      console.error('Error saving product:', error);
+      alert('حدث خطأ أثناء الحفظ');
+    }
+  };
+
+  const handleDeleteProduct = async (productId) => {
+    if (!confirm('هل أنت متأكد من حذف هذا المنتج؟')) return;
+
+    try {
+      const response = await fetch(`/api/admin/products?id=${productId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        // Refresh products
+        const productsRes = await fetch(`/api/admin/families?id=${selectedFamily.id}&includeProducts=true`);
+        const productsData = await productsRes.json();
+        setFamilyProducts(productsData.products || []);
+        // Refresh families
+        fetchFamilies();
+      }
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      alert('حدث خطأ أثناء الحذف');
+    }
   };
 
   return (
@@ -277,7 +356,24 @@ export default function FamiliesManagement() {
                         )}
                       </td>
                       <td style={{ padding: '1rem', textAlign: 'center' }}>
-                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                          <button
+                            onClick={() => handleManageProducts(family)}
+                            style={{
+                              padding: '0.5rem 1rem',
+                              background: '#10b981',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '0.375rem',
+                              fontSize: '0.875rem',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s'
+                            }}
+                            onMouseOver={(e) => e.currentTarget.style.background = '#059669'}
+                            onMouseOut={(e) => e.currentTarget.style.background = '#10b981'}
+                          >
+                            📋 إدارة المنتجات
+                          </button>
                           <button
                             onClick={() => handleEdit(family)}
                             style={{
@@ -443,6 +539,219 @@ export default function FamiliesManagement() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Products Management Modal */}
+        {showProductsModal && selectedFamily && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1001,
+            padding: '1rem'
+          }} onClick={() => setShowProductsModal(false)}>
+            <div style={{
+              background: 'white',
+              borderRadius: '0.75rem',
+              padding: '2rem',
+              maxWidth: '900px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'auto',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
+            }} onClick={(e) => e.stopPropagation()}>
+              <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>
+                  إدارة منتجات: {selectedFamily.name}
+                </h2>
+                <button
+                  onClick={() => setShowProductsModal(false)}
+                  style={{
+                    background: '#f1f5f9',
+                    border: 'none',
+                    borderRadius: '0.375rem',
+                    padding: '0.5rem',
+                    cursor: 'pointer',
+                    fontSize: '1.25rem',
+                    lineHeight: 1
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+
+              {/* Add/Edit Product Form */}
+              <form onSubmit={handleSaveProduct} style={{ marginBottom: '1.5rem', padding: '1rem', background: '#f8fafc', borderRadius: '0.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#475569', marginBottom: '0.5rem' }}>
+                      اسم المنتج *
+                    </label>
+                    <input
+                      type="text"
+                      value={productFormData.name}
+                      onChange={(e) => setProductFormData({ ...productFormData, name: e.target.value })}
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '0.5rem',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.875rem'
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#475569', marginBottom: '0.5rem' }}>
+                      Slug *
+                    </label>
+                    <input
+                      type="text"
+                      value={productFormData.slug}
+                      onChange={(e) => setProductFormData({ ...productFormData, slug: e.target.value })}
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '0.5rem',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.875rem'
+                      }}
+                    />
+                  </div>
+                </div>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#475569', marginBottom: '0.5rem' }}>
+                    الوصف
+                  </label>
+                  <textarea
+                    value={productFormData.description}
+                    onChange={(e) => setProductFormData({ ...productFormData, description: e.target.value })}
+                    rows={2}
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '0.375rem',
+                      fontSize: '0.875rem',
+                      fontFamily: 'inherit'
+                    }}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button
+                    type="submit"
+                    style={{
+                      padding: '0.5rem 1rem',
+                      background: '#10b981',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '0.375rem',
+                      fontSize: '0.875rem',
+                      cursor: 'pointer',
+                      fontWeight: '600'
+                    }}
+                  >
+                    {editingProduct ? 'تحديث' : 'إضافة'} المنتج
+                  </button>
+                  {editingProduct && (
+                    <button
+                      type="button"
+                      onClick={handleAddProduct}
+                      style={{
+                        padding: '0.5rem 1rem',
+                        background: '#94a3b8',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.875rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      إلغاء التعديل
+                    </button>
+                  )}
+                </div>
+              </form>
+
+              {/* Products List */}
+              <div style={{ border: '1px solid #e2e8f0', borderRadius: '0.5rem', overflow: 'hidden' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                      <th style={{ padding: '0.75rem', textAlign: 'right', fontWeight: '600', color: '#475569', fontSize: '0.875rem' }}>
+                        المنتج
+                      </th>
+                      <th style={{ padding: '0.75rem', textAlign: 'right', fontWeight: '600', color: '#475569', fontSize: '0.875rem' }}>
+                        Slug
+                      </th>
+                      <th style={{ padding: '0.75rem', textAlign: 'center', fontWeight: '600', color: '#475569', fontSize: '0.875rem' }}>
+                        الإجراءات
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {familyProducts.length === 0 ? (
+                      <tr>
+                        <td colSpan="3" style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>
+                          لا توجد منتجات في هذه العائلة
+                        </td>
+                      </tr>
+                    ) : (
+                      familyProducts.map((product) => (
+                        <tr key={product.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                          <td style={{ padding: '0.75rem', color: '#1e293b', fontWeight: '600', fontSize: '0.875rem' }}>
+                            {product.name}
+                          </td>
+                          <td style={{ padding: '0.75rem', color: '#64748b', fontSize: '0.875rem' }}>
+                            {product.slug}
+                          </td>
+                          <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                              <button
+                                onClick={() => handleEditProduct(product)}
+                                style={{
+                                  padding: '0.375rem 0.75rem',
+                                  background: '#3b82f6',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '0.375rem',
+                                  fontSize: '0.75rem',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                تعديل
+                              </button>
+                              <button
+                                onClick={() => handleDeleteProduct(product.id)}
+                                style={{
+                                  padding: '0.375rem 0.75rem',
+                                  background: '#ef4444',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '0.375rem',
+                                  fontSize: '0.75rem',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                حذف
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
