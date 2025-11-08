@@ -1,9 +1,9 @@
 import Head from 'next/head';
-import '../styles/globals.css';
 import "swiper/css";
 import "swiper/css/navigation";
-import '../public/assets/css/style.css';
 import "react-modal-video/css/modal-video.css"
+import '../public/assets/css/style.css';
+import '../styles/globals.css';
 import { useEffect, useState } from "react";
 import Preloader from '../components/elements/Preloader';
 
