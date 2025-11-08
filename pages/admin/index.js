@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Head from 'next/head';
+import styles from '../../styles/Admin.module.css';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
@@ -27,25 +28,48 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg">جاري تحميل البيانات...</p>
+      <div className={styles.loading}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ 
+            width: '64px', 
+            height: '64px', 
+            border: '4px solid #e2e8f0',
+            borderTop: '4px solid #667eea',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 1rem'
+          }}></div>
+          <p>جاري تحميل البيانات...</p>
         </div>
+        <style jsx>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-        <div className="bg-white rounded-xl shadow-lg p-8 max-w-md">
-          <div className="text-red-600 text-5xl mb-4 text-center">⚠️</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">خطأ في تحميل البيانات</h2>
-          <p className="text-gray-600 text-center mb-6">{error}</p>
+      <div className={styles.loading}>
+        <div style={{ 
+          background: 'white', 
+          borderRadius: '1rem', 
+          padding: '2rem', 
+          maxWidth: '400px',
+          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)'
+        }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem', textAlign: 'center' }}>⚠️</div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1a202c', marginBottom: '0.5rem', textAlign: 'center' }}>
+            خطأ في تحميل البيانات
+          </h2>
+          <p style={{ color: '#718096', textAlign: 'center', marginBottom: '1.5rem' }}>{error}</p>
           <button
             onClick={fetchStats}
-            className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+            className={`${styles.btn} ${styles.btnPrimary}`}
+            style={{ width: '100%' }}
           >
             إعادة المحاولة
           </button>
@@ -62,174 +86,215 @@ export default function AdminDashboard() {
         <title>لوحة التحكم - Trade for Egypt</title>
       </Head>
 
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100" dir="rtl">
+      <div className={styles.container} dir="rtl">
         {/* Header */}
-        <header className="bg-white shadow-md border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                  <span className="text-3xl">📊</span>
-                  لوحة التحكم
-                </h1>
-                <p className="text-xs text-gray-600 mt-1">
-                  Trade for Egypt - إدارة شبكة المواقع
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <Link
-                  href="/admin/sites"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium shadow-md hover:shadow-lg flex items-center gap-2 text-sm"
-                >
-                  <span className="text-lg">🌐</span>
-                  عرض المواقع
-                </Link>
-                <Link
-                  href="/"
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-medium shadow-sm flex items-center gap-2 text-sm"
-                >
-                  <span className="text-lg">🏠</span>
-                  الصفحة الرئيسية
-                </Link>
-              </div>
+        <div className={styles.header}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+            <div>
+              <h1 className={styles.headerTitle}>
+                <span style={{ fontSize: '2rem' }}>📊</span>
+                لوحة التحكم
+              </h1>
+              <p className={styles.headerSubtitle}>
+                Trade for Egypt - إدارة شبكة المواقع
+              </p>
+            </div>
+            <div className={styles.headerActions}>
+              <Link href="/admin/sites" className={`${styles.btn} ${styles.btnPrimary}`}>
+                <span style={{ fontSize: '1.25rem' }}>🌐</span>
+                عرض المواقع
+              </Link>
+              <Link href="/" className={`${styles.btn} ${styles.btnSecondary}`}>
+                <span style={{ fontSize: '1.25rem' }}>🏠</span>
+                الصفحة الرئيسية
+              </Link>
             </div>
           </div>
-        </header>
+        </div>
 
-        {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <StatCard
-              icon="📦"
-              title="العائلات"
-              value={stats?.stats?.totalFamilies || 0}
-              color="purple"
-              subtitle="عائلة منتجات"
-            />
-            <StatCard
-              icon="🏷️"
-              title="الماركات"
-              value={stats?.stats?.totalBrands || 0}
-              color="blue"
-              subtitle="ماركة تجارية"
-            />
-            <StatCard
-              icon="📱"
-              title="المنتجات"
-              value={stats?.stats?.totalProducts || 0}
-              color="green"
-              subtitle="منتج مختلف"
-            />
-            <StatCard
-              icon="📄"
-              title="الصفحات المولدة"
-              value={stats?.stats?.generatedPages || 0}
-              color="orange"
-              subtitle={`من ${stats?.stats?.expectedPages?.toLocaleString() || 0} متوقعة`}
-            />
-          </div>
+        {/* Stats Cards */}
+        <div className={styles.statsGrid}>
+          <StatCard
+            icon="📦"
+            title="العائلات"
+            value={stats?.stats?.totalFamilies || 0}
+            description="عائلة منتجات"
+            color="#9f7aea"
+          />
+          <StatCard
+            icon="🏷️"
+            title="الماركات"
+            value={stats?.stats?.totalBrands || 0}
+            description="ماركة تجارية"
+            color="#667eea"
+          />
+          <StatCard
+            icon="📱"
+            title="المنتجات"
+            value={stats?.stats?.totalProducts || 0}
+            description="منتج مختلف"
+            color="#48bb78"
+          />
+          <StatCard
+            icon="📄"
+            title="الصفحات المولدة"
+            value={stats?.stats?.generatedPages || 0}
+            description={`من ${stats?.stats?.expectedPages?.toLocaleString() || 0} متوقعة`}
+            color="#ed8936"
+          />
+        </div>
 
-          {/* Progress Section */}
-          <div className="bg-white rounded-lg shadow-md p-5 mb-6 border border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                  <span className="text-2xl">⚡</span>
-                  تقدم توليد الصفحات
-                </h2>
-                <p className="text-xs text-gray-600 mt-1">
-                  نسبة إنجاز المشروع الكلية
-                </p>
-              </div>
-              <div className="text-right">
-                <div className="text-3xl font-bold text-blue-600">
-                  {progressPercentage.toFixed(1)}%
-                </div>
-                <p className="text-xs text-gray-600">مكتمل</p>
-              </div>
+        {/* Progress Section */}
+        <div className={styles.progressSection}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+            <div>
+              <h2 className={styles.sectionTitle}>
+                <span style={{ fontSize: '1.75rem' }}>⚡</span>
+                تقدم توليد الصفحات
+              </h2>
+              <p className={styles.sectionSubtitle}>
+                نسبة إنجاز المشروع الكلية
+              </p>
             </div>
-
-            {/* Progress Bar */}
-            <div className="relative">
-              <div className="overflow-hidden h-5 mb-3 text-xs flex rounded-full bg-gray-200 shadow-inner">
-                <div
-                  style={{ width: `${progressPercentage}%` }}
-                  className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500"
-                ></div>
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#667eea' }}>
+                {progressPercentage.toFixed(1)}%
               </div>
-              <div className="flex justify-between text-xs text-gray-600">
-                <span className="font-medium">
-                  {stats?.stats?.generatedPages?.toLocaleString() || 0} صفحة مولدة
-                </span>
-                <span className="font-medium">
-                  {stats?.stats?.expectedPages?.toLocaleString() || 0} صفحة متوقعة
-                </span>
-              </div>
+              <p style={{ fontSize: '0.875rem', color: '#718096', margin: 0 }}>مكتمل</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-            {/* Recent Brands */}
-            <div className="bg-white rounded-lg shadow-md p-5 border border-gray-200 lg:col-span-2">
-              <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <span className="text-xl">🆕</span>
+          {/* Progress Bar */}
+          <div className={styles.progressBar}>
+            <div 
+              className={styles.progressFill}
+              style={{ width: `${progressPercentage}%` }}
+            >
+              {progressPercentage > 5 && `${progressPercentage.toFixed(1)}%`}
+            </div>
+          </div>
+          <div className={styles.progressStats}>
+            <span>{stats?.stats?.generatedPages?.toLocaleString() || 0} صفحة مولدة</span>
+            <span>{stats?.stats?.expectedPages?.toLocaleString() || 0} صفحة متوقعة</span>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+          {/* Recent Brands */}
+          <div style={{ gridColumn: 'span 2' }}>
+            <div className={styles.progressSection}>
+              <h2 className={styles.sectionTitle}>
+                <span style={{ fontSize: '1.5rem' }}>🆕</span>
                 آخر الماركات المضافة
               </h2>
-              <div className="space-y-2">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 {stats?.recentBrands?.slice(0, 5).map((brand, index) => (
                   <Link
                     key={index}
                     href={`/admin/sites/${brand.slug}`}
-                    className="flex items-center justify-between p-3 bg-gray-50 hover:bg-blue-50 rounded-lg transition group border border-gray-200 hover:border-blue-300"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '1rem',
+                      background: '#f7fafc',
+                      borderRadius: '0.75rem',
+                      textDecoration: 'none',
+                      transition: 'all 0.2s ease',
+                      border: '2px solid #e2e8f0'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.background = '#edf2f7';
+                      e.currentTarget.style.borderColor = '#667eea';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.background = '#f7fafc';
+                      e.currentTarget.style.borderColor = '#e2e8f0';
+                    }}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm group-hover:bg-blue-200 transition">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <div style={{
+                        width: '3rem',
+                        height: '3rem',
+                        background: '#667eea',
+                        borderRadius: '0.75rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        fontWeight: 'bold',
+                        fontSize: '1.25rem'
+                      }}>
                         {brand.name.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <h3 className="font-semibold text-sm text-gray-900 group-hover:text-blue-600 transition">
+                        <h3 style={{ 
+                          fontWeight: '600', 
+                          color: '#1a202c', 
+                          margin: '0 0 0.25rem 0',
+                          fontSize: '1.1rem'
+                        }}>
                           {brand.name}
                         </h3>
-                        <p className="text-xs text-gray-500">
+                        <p style={{ 
+                          fontSize: '0.875rem', 
+                          color: '#718096',
+                          margin: 0
+                        }}>
                           {brand.slug}.tradeforegypt.com
                         </p>
                       </div>
                     </div>
-                    <span className="text-blue-600 group-hover:translate-x-1 transition">
-                      ←
-                    </span>
+                    <span style={{ color: '#667eea', fontSize: '1.5rem' }}>←</span>
                   </Link>
                 ))}
               </div>
             </div>
+          </div>
 
-            {/* Family Distribution */}
-            <div className="bg-white rounded-lg shadow-md p-5 border border-gray-200">
-              <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <span className="text-xl">📊</span>
+          {/* Family Distribution */}
+          <div>
+            <div className={styles.progressSection}>
+              <h2 className={styles.sectionTitle}>
+                <span style={{ fontSize: '1.5rem' }}>📊</span>
                 توزيع الماركات
               </h2>
-              <div className="space-y-3">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {stats?.familyDistribution?.slice(0, 5).map((family, index) => {
-                  const colors = ['blue', 'green', 'purple', 'orange', 'pink'];
+                  const colors = ['#667eea', '#48bb78', '#9f7aea', '#ed8936', '#f56565'];
                   const color = colors[index % colors.length];
                   const percentage = ((family.count / stats.stats.totalBrands) * 100).toFixed(1);
                   
                   return (
                     <div key={index}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-medium text-gray-700">
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'space-between', 
+                        marginBottom: '0.5rem' 
+                      }}>
+                        <span style={{ fontSize: '0.875rem', fontWeight: '600', color: '#4a5568' }}>
                           {family.name}
                         </span>
-                        <span className="text-xs font-bold text-gray-900">
+                        <span style={{ fontSize: '0.875rem', fontWeight: 'bold', color: '#1a202c' }}>
                           {family.count} ({percentage}%)
                         </span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                      <div style={{ 
+                        width: '100%', 
+                        background: '#e2e8f0', 
+                        borderRadius: '9999px', 
+                        height: '0.75rem', 
+                        overflow: 'hidden' 
+                      }}>
                         <div
-                          className={`h-2 rounded-full bg-${color}-500 transition-all duration-500`}
-                          style={{ width: `${percentage}%` }}
+                          style={{ 
+                            height: '100%', 
+                            borderRadius: '9999px', 
+                            background: color,
+                            width: `${percentage}%`,
+                            transition: 'width 0.5s ease'
+                          }}
                         ></div>
                       </div>
                     </div>
@@ -238,62 +303,135 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Quick Actions */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg shadow-md p-5 text-white">
-            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <span className="text-2xl">⚡</span>
-              إجراءات سريعة
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <Link
-                href="/admin/sites"
-                className="bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg p-4 transition group border border-white/20"
-              >
-                <div className="text-3xl mb-2">🌐</div>
-                <h3 className="font-bold text-base mb-1">عرض جميع المواقع</h3>
-                <p className="text-xs text-blue-100">إدارة ومعاينة المواقع</p>
-              </Link>
-              <button className="bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg p-4 transition group border border-white/20 text-right">
-                <div className="text-3xl mb-2">🚀</div>
-                <h3 className="font-bold text-base mb-1">توليد الصفحات</h3>
-                <p className="text-xs text-blue-100">بدء توليد تلقائي</p>
-              </button>
-              <button
-                onClick={fetchStats}
-                className="bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg p-4 transition group border border-white/20 text-right"
-              >
-                <div className="text-3xl mb-2">🔄</div>
-                <h3 className="font-bold text-base mb-1">تحديث البيانات</h3>
-                <p className="text-xs text-blue-100">إعادة تحميل الإحصائيات</p>
-              </button>
-            </div>
+        {/* Quick Actions */}
+        <div style={{
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          borderRadius: '1rem',
+          padding: '2rem',
+          color: 'white',
+          boxShadow: '0 10px 30px rgba(102, 126, 234, 0.3)'
+        }}>
+          <h2 style={{ 
+            fontSize: '1.75rem', 
+            fontWeight: 'bold', 
+            marginBottom: '1.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem'
+          }}>
+            <span style={{ fontSize: '2rem' }}>⚡</span>
+            إجراءات سريعة
+          </h2>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+            gap: '1rem' 
+          }}>
+            <Link
+              href="/admin/sites"
+              style={{
+                background: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '0.75rem',
+                padding: '1.5rem',
+                textDecoration: 'none',
+                color: 'white',
+                transition: 'all 0.2s ease',
+                border: '2px solid rgba(255, 255, 255, 0.2)'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+              }}
+            >
+              <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🌐</div>
+              <h3 style={{ fontWeight: 'bold', fontSize: '1.125rem', marginBottom: '0.5rem' }}>
+                عرض جميع المواقع
+              </h3>
+              <p style={{ fontSize: '0.875rem', opacity: 0.9, margin: 0 }}>إدارة ومعاينة المواقع</p>
+            </Link>
+            <button 
+              style={{
+                background: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '0.75rem',
+                padding: '1.5rem',
+                color: 'white',
+                transition: 'all 0.2s ease',
+                border: '2px solid rgba(255, 255, 255, 0.2)',
+                cursor: 'pointer',
+                textAlign: 'right'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+              }}
+            >
+              <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🚀</div>
+              <h3 style={{ fontWeight: 'bold', fontSize: '1.125rem', marginBottom: '0.5rem' }}>
+                توليد الصفحات
+              </h3>
+              <p style={{ fontSize: '0.875rem', opacity: 0.9, margin: 0 }}>بدء توليد تلقائي</p>
+            </button>
+            <button
+              onClick={fetchStats}
+              style={{
+                background: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '0.75rem',
+                padding: '1.5rem',
+                color: 'white',
+                transition: 'all 0.2s ease',
+                border: '2px solid rgba(255, 255, 255, 0.2)',
+                cursor: 'pointer',
+                textAlign: 'right'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+              }}
+            >
+              <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🔄</div>
+              <h3 style={{ fontWeight: 'bold', fontSize: '1.125rem', marginBottom: '0.5rem' }}>
+                تحديث البيانات
+              </h3>
+              <p style={{ fontSize: '0.875rem', opacity: 0.9, margin: 0 }}>إعادة تحميل الإحصائيات</p>
+            </button>
           </div>
-        </main>
+        </div>
       </div>
     </>
   );
 }
 
-function StatCard({ icon, title, value, color, subtitle }) {
-  const colorClasses = {
-    purple: 'from-purple-500 to-purple-600',
-    blue: 'from-blue-500 to-blue-600',
-    green: 'from-green-500 to-green-600',
-    orange: 'from-orange-500 to-orange-600',
-    pink: 'from-pink-500 to-pink-600',
-  };
-
+function StatCard({ icon, title, value, description, color }) {
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 border border-gray-200 hover:shadow-lg transition">
-      <div className="flex items-center justify-between mb-3">
-        <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${colorClasses[color]} flex items-center justify-center text-2xl shadow-md`}>
-          {icon}
-        </div>
+    <div className={styles.statCard}>
+      <div className={styles.statIcon} style={{ 
+        width: '4rem',
+        height: '4rem',
+        background: `linear-gradient(135deg, ${color} 0%, ${color}dd 100%)`,
+        borderRadius: '1rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '2rem',
+        marginBottom: '1rem',
+        boxShadow: `0 4px 15px ${color}40`
+      }}>
+        {icon}
       </div>
-      <h3 className="text-xs font-medium text-gray-600 mb-1">{title}</h3>
-      <p className="text-2xl font-bold text-gray-900 mb-0.5">{value.toLocaleString()}</p>
-      {subtitle && <p className="text-xs text-gray-500">{subtitle}</p>}
+      <p className={styles.statLabel}>{title}</p>
+      <h3 className={styles.statValue}>{value.toLocaleString()}</h3>
+      <p className={styles.statDescription}>{description}</p>
     </div>
   );
 }
