@@ -20,6 +20,7 @@ export default function AdminBrands() {
   const [editingBrand, setEditingBrand] = useState(null);
   const [formData, setFormData] = useState({ 
     name: '', 
+    name_ar: '',
     slug: '', 
     description: '',
     logo_url: '',
@@ -76,6 +77,7 @@ export default function AdminBrands() {
     setEditingBrand(null);
     setFormData({ 
       name: '', 
+      name_ar: '',
       slug: '', 
       description: '',
       logo_url: '',
@@ -90,6 +92,7 @@ export default function AdminBrands() {
     setEditingBrand(brand);
     setFormData({
       name: brand.name,
+      name_ar: brand.name_ar || '',
       slug: brand.slug,
       description: brand.description || '',
       logo_url: brand.logo_url || '',
@@ -126,6 +129,7 @@ export default function AdminBrands() {
           .from('brands')
           .update({
             name: formData.name,
+            name_ar: formData.name_ar,
             slug: formData.slug,
             description: formData.description,
             logo_url: formData.logo_url,
@@ -157,6 +161,7 @@ export default function AdminBrands() {
           .from('brands')
           .insert([{
             name: formData.name,
+            name_ar: formData.name_ar,
             slug: formData.slug,
             description: formData.description,
             logo_url: formData.logo_url,
@@ -212,6 +217,7 @@ export default function AdminBrands() {
 
   const filteredBrands = brands.filter(brand =>
     brand.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    brand.name_ar?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     brand.slug?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     brand.alternative_names?.some(alt => 
       alt.toLowerCase().includes(searchTerm.toLowerCase())
@@ -452,9 +458,16 @@ export default function AdminBrands() {
                             }}
                           />
                         )}
-                        <span style={{ fontWeight: '600', color: '#1e293b' }}>
-                          {brand.name}
-                        </span>
+                        <div>
+                          <span style={{ fontWeight: '600', color: '#1e293b', display: 'block' }}>
+                            {brand.name}
+                          </span>
+                          {brand.name_ar && (
+                            <span style={{ fontSize: '0.875rem', color: '#64748b', display: 'block', marginTop: '0.25rem' }}>
+                              {brand.name_ar}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td style={{ padding: '1rem', color: '#64748b', fontSize: '0.875rem' }}>
@@ -652,6 +665,24 @@ export default function AdminBrands() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '0.5rem',
+                      fontSize: '1rem'
+                    }}
+                  />
+                </div>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#475569', marginBottom: '0.5rem' }}>
+                    الاسم بالعربي
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name_ar}
+                    onChange={(e) => setFormData({ ...formData, name_ar: e.target.value })}
+                    placeholder="مثال: بلاك آند ديكر"
                     style={{
                       width: '100%',
                       padding: '0.75rem',
