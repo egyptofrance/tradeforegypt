@@ -23,8 +23,10 @@ export default function AdminBrands() {
     slug: '', 
     description: '',
     logo_url: '',
-    selectedFamilies: []
+    selectedFamilies: [],
+    alternative_names: []
   });
+  const [newAlternativeName, setNewAlternativeName] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -57,7 +59,8 @@ export default function AdminBrands() {
         families: relationsData
           .filter(rel => rel.brand_id === brand.id)
           .map(rel => familiesData.find(fam => fam.id === rel.family_id))
-          .filter(Boolean)
+          .filter(Boolean),
+        alternative_names: brand.alternative_names || []
       }));
       
       setBrands(brandsWithFamilies);
@@ -76,8 +79,10 @@ export default function AdminBrands() {
       slug: '', 
       description: '',
       logo_url: '',
-      selectedFamilies: []
+      selectedFamilies: [],
+      alternative_names: []
     });
+    setNewAlternativeName('');
     setShowModal(true);
   };
 
@@ -88,9 +93,28 @@ export default function AdminBrands() {
       slug: brand.slug,
       description: brand.description || '',
       logo_url: brand.logo_url || '',
-      selectedFamilies: brand.families.map(f => f.id)
+      selectedFamilies: brand.families.map(f => f.id),
+      alternative_names: brand.alternative_names || []
     });
+    setNewAlternativeName('');
     setShowModal(true);
+  };
+
+  const addAlternativeName = () => {
+    if (newAlternativeName.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        alternative_names: [...prev.alternative_names, newAlternativeName.trim()]
+      }));
+      setNewAlternativeName('');
+    }
+  };
+
+  const removeAlternativeName = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      alternative_names: prev.alternative_names.filter((_, i) => i !== index)
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -104,7 +128,8 @@ export default function AdminBrands() {
             name: formData.name,
             slug: formData.slug,
             description: formData.description,
-            logo_url: formData.logo_url
+            logo_url: formData.logo_url,
+            alternative_names: formData.alternative_names
           })
           .eq('id', editingBrand.id);
 
@@ -134,7 +159,8 @@ export default function AdminBrands() {
             name: formData.name,
             slug: formData.slug,
             description: formData.description,
-            logo_url: formData.logo_url
+            logo_url: formData.logo_url,
+            alternative_names: formData.alternative_names
           }])
           .select()
           .single();
@@ -329,75 +355,101 @@ export default function AdminBrands() {
               }}
               style={{
                 width: '100%',
-                maxWidth: '400px',
-                padding: '0.75rem 1rem',
+                padding: '0.875rem 1rem',
                 border: '1px solid #e2e8f0',
                 borderRadius: '0.5rem',
                 fontSize: '1rem',
-                transition: 'all 0.2s'
+                background: 'white',
+                boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
               }}
-              onFocus={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
-              onBlur={(e) => e.currentTarget.style.borderColor = '#e2e8f0'}
             />
           </div>
 
-          {/* Brands Table */}
-          <div style={{
-            background: 'white',
+          {/* Table */}
+          <div style={{ 
+            background: 'white', 
             borderRadius: '0.75rem',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
-            border: '1px solid #e2e8f0',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
           }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
-                  <th style={{ padding: '1rem', textAlign: 'right', fontWeight: '600', color: '#475569', fontSize: '0.875rem' }}>
-                    الاسم
+                <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                  <th style={{ 
+                    padding: '1rem', 
+                    textAlign: 'right', 
+                    fontSize: '0.875rem', 
+                    fontWeight: '600', 
+                    color: '#475569'
+                  }}>
+                    الماركة
                   </th>
-                  <th style={{ padding: '1rem', textAlign: 'right', fontWeight: '600', color: '#475569', fontSize: '0.875rem' }}>
+                  <th style={{ 
+                    padding: '1rem', 
+                    textAlign: 'right', 
+                    fontSize: '0.875rem', 
+                    fontWeight: '600', 
+                    color: '#475569'
+                  }}>
                     Slug
                   </th>
-                  <th style={{ padding: '1rem', textAlign: 'right', fontWeight: '600', color: '#475569', fontSize: '0.875rem' }}>
+                  <th style={{ 
+                    padding: '1rem', 
+                    textAlign: 'right', 
+                    fontSize: '0.875rem', 
+                    fontWeight: '600', 
+                    color: '#475569'
+                  }}>
                     العائلات
                   </th>
-                  <th style={{ padding: '1rem', textAlign: 'center', fontWeight: '600', color: '#475569', fontSize: '0.875rem' }}>
+                  <th style={{ 
+                    padding: '1rem', 
+                    textAlign: 'right', 
+                    fontSize: '0.875rem', 
+                    fontWeight: '600', 
+                    color: '#475569'
+                  }}>
+                    الأسماء البديلة
+                  </th>
+                  <th style={{ 
+                    padding: '1rem', 
+                    textAlign: 'center', 
+                    fontSize: '0.875rem', 
+                    fontWeight: '600', 
+                    color: '#475569'
+                  }}>
                     الإجراءات
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {paginatedBrands.map((brand) => (
-                  <tr key={brand.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                {paginatedBrands.map((brand, index) => (
+                  <tr 
+                    key={brand.id}
+                    style={{ 
+                      borderBottom: index < paginatedBrands.length - 1 ? '1px solid #f1f5f9' : 'none',
+                      transition: 'background 0.2s'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.background = '#f8fafc'}
+                    onMouseOut={(e) => e.currentTarget.style.background = 'white'}
+                  >
                     <td style={{ padding: '1rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        {brand.logo_url ? (
+                        {brand.logo_url && (
                           <img 
                             src={brand.logo_url} 
                             alt={brand.name}
                             style={{ 
                               width: '40px', 
                               height: '40px', 
+                              objectFit: 'contain',
+                              background: '#f8fafc',
                               borderRadius: '0.375rem',
-                              objectFit: 'cover'
+                              padding: '0.25rem'
                             }}
                           />
-                        ) : (
-                          <div style={{
-                            width: '40px',
-                            height: '40px',
-                            background: '#3b82f6',
-                            borderRadius: '0.375rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: 'white',
-                            fontWeight: 'bold'
-                          }}>
-                            {brand.name.charAt(0)}
-                          </div>
                         )}
-                        <span style={{ color: '#1e293b', fontWeight: '600' }}>
+                        <span style={{ fontWeight: '600', color: '#1e293b' }}>
                           {brand.name}
                         </span>
                       </div>
@@ -430,6 +482,40 @@ export default function AdminBrands() {
                           }}>
                             +{brand.families.length - 3}
                           </span>
+                        )}
+                      </div>
+                    </td>
+                    <td style={{ padding: '1rem' }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
+                        {brand.alternative_names && brand.alternative_names.length > 0 ? (
+                          <>
+                            {brand.alternative_names.slice(0, 2).map((name, idx) => (
+                              <span
+                                key={idx}
+                                style={{
+                                  padding: '0.25rem 0.625rem',
+                                  background: '#f0fdf4',
+                                  color: '#16a34a',
+                                  borderRadius: '0.375rem',
+                                  fontSize: '0.75rem',
+                                  fontWeight: '500'
+                                }}
+                              >
+                                {name}
+                              </span>
+                            ))}
+                            {brand.alternative_names.length > 2 && (
+                              <span style={{ 
+                                padding: '0.25rem 0.625rem',
+                                color: '#64748b',
+                                fontSize: '0.75rem'
+                              }}>
+                                +{brand.alternative_names.length - 2}
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>لا يوجد</span>
                         )}
                       </div>
                     </td>
@@ -625,6 +711,106 @@ export default function AdminBrands() {
                     }}
                   />
                 </div>
+                
+                {/* Alternative Names Section */}
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#475569', marginBottom: '0.5rem' }}>
+                    الأسماء البديلة بالعربي
+                  </label>
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: '0.5rem',
+                    marginBottom: '0.5rem'
+                  }}>
+                    <input
+                      type="text"
+                      value={newAlternativeName}
+                      onChange={(e) => setNewAlternativeName(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addAlternativeName();
+                        }
+                      }}
+                      placeholder="مثال: بلاك اند دكر، بلاكانديكر..."
+                      style={{
+                        flex: 1,
+                        padding: '0.75rem',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '0.5rem',
+                        fontSize: '1rem'
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={addAlternativeName}
+                      style={{
+                        padding: '0.75rem 1rem',
+                        background: '#10b981',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '0.5rem',
+                        fontSize: '0.875rem',
+                        cursor: 'pointer',
+                        fontWeight: '600',
+                        whiteSpace: 'nowrap'
+                      }}
+                      onMouseOver={(e) => e.currentTarget.style.background = '#059669'}
+                      onMouseOut={(e) => e.currentTarget.style.background = '#10b981'}
+                    >
+                      + إضافة
+                    </button>
+                  </div>
+                  
+                  {/* Display Alternative Names */}
+                  {formData.alternative_names.length > 0 && (
+                    <div style={{ 
+                      padding: '0.75rem',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '0.5rem',
+                      background: '#f8fafc'
+                    }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                        {formData.alternative_names.map((name, index) => (
+                          <div
+                            key={index}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem',
+                              padding: '0.5rem 0.75rem',
+                              background: '#f0fdf4',
+                              color: '#16a34a',
+                              borderRadius: '0.375rem',
+                              fontSize: '0.875rem',
+                              fontWeight: '500'
+                            }}
+                          >
+                            <span>{name}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeAlternativeName(index)}
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: '#dc2626',
+                                cursor: 'pointer',
+                                fontSize: '1rem',
+                                padding: '0',
+                                lineHeight: '1',
+                                fontWeight: 'bold'
+                              }}
+                              title="حذف"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <div style={{ marginBottom: '1.5rem' }}>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#475569', marginBottom: '0.5rem' }}>
                     العائلات
