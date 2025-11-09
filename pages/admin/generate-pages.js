@@ -19,11 +19,14 @@ const KEYWORDS = [
 
 export default function GeneratePagesAdmin() {
   const [brands, setBrands] = useState([]);
-  const [products, setProducts] = useState([]);
+  const [allProducts, setAllProducts] = useState([]); // جميع المنتجات
+  const [filteredProducts, setFilteredProducts] = useState([]); // المنتجات المفلترة
   const [loading, setLoading] = useState(true);
+  const [productsLoading, setProductsLoading] = useState(false);
   
   // Test Page Generation
-  const [selectedBrand, setSelectedBrand] = useState('');
+  const [selectedBrandId, setSelectedBrandId] = useState('');
+  const [selectedBrandSlug, setSelectedBrandSlug] = useState('');
   const [selectedProduct, setSelectedProduct] = useState('');
   const [selectedKeyword, setSelectedKeyword] = useState('');
   const [testResult, setTestResult] = useState(null);
@@ -38,10 +41,20 @@ export default function GeneratePagesAdmin() {
   });
 
   useEffect(() => {
-    fetchData();
+    fetchInitialData();
   }, []);
 
-  const fetchData = async () => {
+  // جلب المنتجات عند اختيار ماركة
+  useEffect(() => {
+    if (selectedBrandId) {
+      fetchProductsByBrand(selectedBrandId);
+    } else {
+      setFilteredProducts([]);
+      setSelectedProduct('');
+    }
+  }, [selectedBrandId]);
+
+  const fetchInitialData = async () => {
     try {
       setLoading(true);
       
@@ -60,7 +73,7 @@ export default function GeneratePagesAdmin() {
       if (productsError) throw productsError;
       
       setBrands(brandsData);
-      setProducts(productsData);
+      setAllProducts(productsData);
       
       // حساب الإحصائيات
       const totalPages = brandsData.length * productsData.length * KEYWORDS.length;
@@ -79,8 +92,40 @@ export default function GeneratePagesAdmin() {
     }
   };
 
+  const fetchProductsByBrand = async (brandId) => {
+    try {
+      setProductsLoading(true);
+      setFilteredProducts([]);
+      setSelectedProduct('');
+      
+      const response = await fetch(`/api/products-by-brand?brandId=${brandId}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setFilteredProducts(data.products);
+      } else {
+        alert('حدث خطأ في جلب المنتجات');
+      }
+      
+    } catch (err) {
+      console.error('Error fetching products by brand:', err);
+      alert('حدث خطأ في جلب المنتجات');
+    } finally {
+      setProductsLoading(false);
+    }
+  };
+
+  const handleBrandChange = (e) => {
+    const brandId = e.target.value;
+    setSelectedBrandId(brandId);
+    
+    // البحث عن slug الماركة
+    const brand = brands.find(b => b.id === parseInt(brandId));
+    setSelectedBrandSlug(brand ? brand.slug : '');
+  };
+
   const handleRunTest = async () => {
-    if (!selectedBrand || !selectedProduct || !selectedKeyword) {
+    if (!selectedBrandSlug || !selectedProduct || !selectedKeyword) {
       alert('يرجى اختيار الماركة والمنتج والكلمة المفتاحية');
       return;
     }
@@ -90,7 +135,7 @@ export default function GeneratePagesAdmin() {
 
     try {
       // بناء الرابط
-      const testUrl = `/${selectedBrand}/${selectedProduct}/${selectedKeyword}`;
+      const testUrl = `/${selectedBrandSlug}/${selectedProduct}/${selectedKeyword}`;
       const fullUrl = `${window.location.origin}${testUrl}`;
       
       // محاولة الوصول للصفحة
@@ -99,13 +144,17 @@ export default function GeneratePagesAdmin() {
       if (response.ok) {
         const html = await response.text();
         
-        // استخراج معلومات SEO من HTML
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
+        // استخراج Title
+        const titleMatch = html.match(/<title>(.*?)<\/title>/);
+        const title = titleMatch ? titleMatch[1] : 'غير متوفر';
         
-        const title = doc.querySelector('title')?.textContent || 'غير متوفر';
-        const description = doc.querySelector('meta[name="description"]')?.content || 'غير متوفر';
-        const canonical = doc.querySelector('link[rel="canonical"]')?.href || 'غير متوفر';
+        // استخراج Meta Description
+        const descMatch = html.match(/<meta name="description" content="(.*?)"/);
+        const description = descMatch ? descMatch[1] : 'غير متوفر';
+        
+        // استخراج Canonical
+        const canonicalMatch = html.match(/<link rel="canonical" href="(.*?)"/);
+        const canonical = canonicalMatch ? canonicalMatch[1] : fullUrl;
         
         setTestResult({
           success: true,
@@ -113,22 +162,23 @@ export default function GeneratePagesAdmin() {
           title,
           description,
           canonical,
-          statusCode: response.status,
-          message: 'تم توليد الصفحة بنجاح! ✅'
+          status: response.status
         });
       } else {
         setTestResult({
           success: false,
           url: fullUrl,
-          statusCode: response.status,
-          message: `فشل توليد الصفحة (${response.status})`
+          error: `فشل توليد الصفحة (${response.status})`,
+          status: response.status
         });
       }
+      
     } catch (error) {
-      console.error('Test error:', error);
       setTestResult({
         success: false,
-        message: `خطأ: ${error.message}`
+        url: `/${selectedBrandSlug}/${selectedProduct}/${selectedKeyword}`,
+        error: error.message,
+        status: 'خطأ'
       });
     } finally {
       setTestLoading(false);
@@ -136,31 +186,42 @@ export default function GeneratePagesAdmin() {
   };
 
   const handleRevalidate = async () => {
-    if (!selectedBrand || !selectedProduct || !selectedKeyword) {
+    if (!selectedBrandSlug || !selectedProduct || !selectedKeyword) {
       alert('يرجى اختيار الماركة والمنتج والكلمة المفتاحية');
       return;
     }
 
+    setTestLoading(true);
+
     try {
-      const path = `/${selectedBrand}/${selectedProduct}/${selectedKeyword}`;
+      const path = `/${selectedBrandSlug}/${selectedProduct}/${selectedKeyword}`;
       const response = await fetch(`/api/revalidate?path=${encodeURIComponent(path)}`);
       const data = await response.json();
       
       if (data.revalidated) {
-        alert('تم تحديث الصفحة بنجاح! ✅');
+        alert(`✅ تم تحديث الصفحة: ${path}`);
+        // إعادة اختبار الصفحة
+        await handleRunTest();
       } else {
-        alert('فشل تحديث الصفحة');
+        alert(`❌ فشل تحديث الصفحة: ${data.message}`);
       }
+      
     } catch (error) {
-      console.error('Revalidate error:', error);
-      alert(`خطأ: ${error.message}`);
+      alert(`❌ خطأ: ${error.message}`);
+    } finally {
+      setTestLoading(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="loading-container">
-        <p>جاري التحميل...</p>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">جاري التحميل...</span>
+          </div>
+          <p className="mt-3">جاري تحميل البيانات...</p>
+        </div>
       </div>
     );
   }
@@ -168,450 +229,275 @@ export default function GeneratePagesAdmin() {
   return (
     <>
       <Head>
-        <title>توليد الصفحات | لوحة التحكم</title>
+        <title>توليد الصفحات - Trade for Egypt</title>
       </Head>
 
-      <div className="admin-container">
-        <div className="admin-header">
-          <h1>🚀 توليد الصفحات</h1>
-          <Link href="/admin">
-            <button className="btn-secondary">← العودة للوحة التحكم</button>
-          </Link>
-        </div>
+      <div style={{ minHeight: '100vh', background: '#f8f9fa', padding: '2rem' }} dir="rtl">
+        {/* Header */}
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ 
+            background: 'white', 
+            borderRadius: '1rem', 
+            padding: '2rem', 
+            marginBottom: '2rem',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+              <h1 style={{ margin: 0, fontSize: '2rem', color: '#333' }}>
+                🚀 توليد الصفحات
+              </h1>
+              <Link href="/admin" style={{ 
+                padding: '0.75rem 1.5rem', 
+                background: '#6c757d', 
+                color: 'white', 
+                borderRadius: '0.5rem',
+                textDecoration: 'none',
+                fontWeight: '600'
+              }}>
+                ← العودة للوحة التحكم
+              </Link>
+            </div>
+          </div>
 
-        {/* Statistics */}
-        <div className="stats-grid">
-          <div className="stat-card">
-            <h3>عدد الماركات</h3>
-            <p className="stat-number">{stats.totalBrands}</p>
+          {/* Stats Cards */}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+            gap: '1.5rem',
+            marginBottom: '2rem'
+          }}>
+            <div style={{ 
+              background: '#667eea', 
+              color: 'white', 
+              padding: '2rem', 
+              borderRadius: '1rem',
+              boxShadow: '0 4px 12px rgba(102,126,234,0.3)'
+            }}>
+              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', opacity: 0.9 }}>إجمالي الصفحات المتوقعة</h3>
+              <p style={{ margin: 0, fontSize: '2.5rem', fontWeight: 'bold' }}>
+                {stats.estimatedPages.toLocaleString()}
+              </p>
+            </div>
+            
+            <div style={{ background: 'white', padding: '2rem', borderRadius: '1rem', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', color: '#666' }}>الكلمات المفتاحية</h3>
+              <p style={{ margin: 0, fontSize: '2.5rem', fontWeight: 'bold', color: '#333' }}>
+                {stats.totalKeywords}
+              </p>
+            </div>
+            
+            <div style={{ background: 'white', padding: '2rem', borderRadius: '1rem', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', color: '#666' }}>عدد المنتجات</h3>
+              <p style={{ margin: 0, fontSize: '2.5rem', fontWeight: 'bold', color: '#333' }}>
+                {stats.totalProducts}
+              </p>
+            </div>
+            
+            <div style={{ background: 'white', padding: '2rem', borderRadius: '1rem', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', color: '#666' }}>عدد الماركات</h3>
+              <p style={{ margin: 0, fontSize: '2.5rem', fontWeight: 'bold', color: '#333' }}>
+                {stats.totalBrands}
+              </p>
+            </div>
           </div>
-          <div className="stat-card">
-            <h3>عدد المنتجات</h3>
-            <p className="stat-number">{stats.totalProducts}</p>
-          </div>
-          <div className="stat-card">
-            <h3>الكلمات المفتاحية</h3>
-            <p className="stat-number">{stats.totalKeywords}</p>
-          </div>
-          <div className="stat-card highlight">
-            <h3>إجمالي الصفحات المتوقعة</h3>
-            <p className="stat-number">{stats.estimatedPages.toLocaleString()}</p>
-          </div>
-        </div>
 
-        {/* Test Page Generation */}
-        <div className="section-card">
-          <h2>🧪 اختبار توليد صفحة واحدة (RUN TEST)</h2>
-          <p className="section-description">
-            اختر ماركة ومنتج وكلمة مفتاحية لتوليد صفحة تجريبية والتحقق من جميع عناصر SEO
-          </p>
+          {/* Test Section */}
+          <div style={{ 
+            background: 'white', 
+            borderRadius: '1rem', 
+            padding: '2rem', 
+            marginBottom: '2rem',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+          }}>
+            <h2 style={{ marginBottom: '1rem', fontSize: '1.5rem', color: '#333' }}>
+              🧪 اختبار توليد صفحة واحدة (RUN TEST)
+            </h2>
+            <p style={{ color: '#666', marginBottom: '2rem' }}>
+              اختر ماركة ومنتج وكلمة مفتاحية لتوليد صفحة تجريبية والتحقق من جميع عناصر SEO
+            </p>
 
-          <div className="form-grid">
-            <div className="form-group">
-              <label>الماركة</label>
-              <select 
-                value={selectedBrand} 
-                onChange={(e) => setSelectedBrand(e.target.value)}
-                className="form-select"
-              >
-                <option value="">اختر الماركة</option>
-                {brands.map(brand => (
-                  <option key={brand.id} value={brand.slug}>
-                    {brand.name} {brand.name_ar && `(${brand.name_ar})`}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+              {/* الماركة */}
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#333' }}>
+                  الماركة
+                </label>
+                <select 
+                  value={selectedBrandId}
+                  onChange={handleBrandChange}
+                  style={{ 
+                    width: '100%', 
+                    padding: '0.75rem', 
+                    borderRadius: '0.5rem', 
+                    border: '2px solid #e0e0e0',
+                    fontSize: '1rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="">اختر الماركة</option>
+                  {brands.map(brand => (
+                    <option key={brand.id} value={brand.id}>
+                      {brand.name} ({brand.name_ar || brand.name})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* المنتج */}
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#333' }}>
+                  المنتج
+                </label>
+                <select 
+                  value={selectedProduct}
+                  onChange={(e) => setSelectedProduct(e.target.value)}
+                  disabled={!selectedBrandId || productsLoading}
+                  style={{ 
+                    width: '100%', 
+                    padding: '0.75rem', 
+                    borderRadius: '0.5rem', 
+                    border: '2px solid #e0e0e0',
+                    fontSize: '1rem',
+                    cursor: selectedBrandId ? 'pointer' : 'not-allowed',
+                    background: !selectedBrandId || productsLoading ? '#f5f5f5' : 'white'
+                  }}
+                >
+                  <option value="">
+                    {productsLoading ? 'جاري التحميل...' : selectedBrandId ? 'اختر المنتج' : 'اختر الماركة أولاً'}
                   </option>
-                ))}
-              </select>
+                  {filteredProducts.map(product => (
+                    <option key={product.id} value={product.slug}>
+                      {product.name}
+                    </option>
+                  ))}
+                </select>
+                {selectedBrandId && filteredProducts.length === 0 && !productsLoading && (
+                  <p style={{ color: '#dc3545', fontSize: '0.875rem', marginTop: '0.5rem' }}>
+                    ⚠️ لا توجد منتجات مرتبطة بهذه الماركة
+                  </p>
+                )}
+              </div>
+
+              {/* الكلمة المفتاحية */}
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#333' }}>
+                  الكلمة المفتاحية
+                </label>
+                <select 
+                  value={selectedKeyword}
+                  onChange={(e) => setSelectedKeyword(e.target.value)}
+                  style={{ 
+                    width: '100%', 
+                    padding: '0.75rem', 
+                    borderRadius: '0.5rem', 
+                    border: '2px solid #e0e0e0',
+                    fontSize: '1rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="">اختر الكلمة</option>
+                  {KEYWORDS.map(keyword => (
+                    <option key={keyword.slug} value={keyword.slug}>
+                      {keyword.name} ({keyword.slug})
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            <div className="form-group">
-              <label>المنتج</label>
-              <select 
-                value={selectedProduct} 
-                onChange={(e) => setSelectedProduct(e.target.value)}
-                className="form-select"
+            {/* Buttons */}
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <button
+                onClick={handleRunTest}
+                disabled={testLoading || !selectedBrandSlug || !selectedProduct || !selectedKeyword}
+                style={{
+                  padding: '1rem 2rem',
+                  background: testLoading ? '#ccc' : '#667eea',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '0.5rem',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  cursor: testLoading ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 4px 12px rgba(102,126,234,0.3)'
+                }}
               >
-                <option value="">اختر المنتج</option>
-                {products.map(product => (
-                  <option key={product.id} value={product.slug}>
-                    {product.name}
-                  </option>
-                ))}
-              </select>
+                {testLoading ? '⏳ جاري التوليد...' : '🧪 RUN TEST - توليد صفحة تجريبية'}
+              </button>
+
+              <button
+                onClick={handleRevalidate}
+                disabled={testLoading || !selectedBrandSlug || !selectedProduct || !selectedKeyword}
+                style={{
+                  padding: '1rem 2rem',
+                  background: testLoading ? '#ccc' : 'white',
+                  color: '#667eea',
+                  border: '2px solid #667eea',
+                  borderRadius: '0.5rem',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  cursor: testLoading ? 'not-allowed' : 'pointer'
+                }}
+              >
+                🔄 تحديث الصفحة (Revalidate)
+              </button>
             </div>
 
-            <div className="form-group">
-              <label>الكلمة المفتاحية</label>
-              <select 
-                value={selectedKeyword} 
-                onChange={(e) => setSelectedKeyword(e.target.value)}
-                className="form-select"
-              >
-                <option value="">اختر الكلمة</option>
-                {KEYWORDS.map(kw => (
-                  <option key={kw.slug} value={kw.slug}>
-                    {kw.name} ({kw.slug})
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* Test Result */}
+            {testResult && (
+              <div style={{ 
+                marginTop: '2rem', 
+                padding: '1.5rem', 
+                background: testResult.success ? '#d4edda' : '#f8d7da',
+                border: `2px solid ${testResult.success ? '#c3e6cb' : '#f5c6cb'}`,
+                borderRadius: '0.5rem'
+              }}>
+                <h3 style={{ margin: '0 0 1rem 0', color: testResult.success ? '#155724' : '#721c24' }}>
+                  {testResult.success ? '✅ نجح توليد الصفحة!' : '❌ فشل توليد الصفحة'}
+                </h3>
+                
+                {testResult.success ? (
+                  <>
+                    <p style={{ margin: '0.5rem 0' }}><strong>الرابط:</strong> <a href={testResult.url} target="_blank" rel="noopener noreferrer" style={{ color: '#007bff' }}>{testResult.url}</a></p>
+                    <p style={{ margin: '0.5rem 0' }}><strong>Title:</strong> {testResult.title}</p>
+                    <p style={{ margin: '0.5rem 0' }}><strong>Description:</strong> {testResult.description}</p>
+                    <p style={{ margin: '0.5rem 0' }}><strong>Canonical:</strong> {testResult.canonical}</p>
+                    <p style={{ margin: '0.5rem 0' }}><strong>Status:</strong> {testResult.status}</p>
+                  </>
+                ) : (
+                  <>
+                    <p style={{ margin: '0.5rem 0' }}><strong>الخطأ:</strong> {testResult.error}</p>
+                    <p style={{ margin: '0.5rem 0' }}><strong>الرابط:</strong> {testResult.url}</p>
+                    <p style={{ margin: '0.5rem 0', color: '#721c24' }}>
+                      💡 تأكد من أن الماركة والمنتج مرتبطين في قاعدة البيانات (جدول brand_families)
+                    </p>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
-          <div className="button-group">
-            <button 
-              onClick={handleRunTest}
-              disabled={testLoading || !selectedBrand || !selectedProduct || !selectedKeyword}
-              className="btn-primary btn-large"
-            >
-              {testLoading ? '⏳ جاري التوليد...' : '🧪 RUN TEST - توليد صفحة تجريبية'}
-            </button>
-
-            <button 
-              onClick={handleRevalidate}
-              disabled={!selectedBrand || !selectedProduct || !selectedKeyword}
-              className="btn-secondary"
-            >
-              🔄 تحديث الصفحة (Revalidate)
-            </button>
+          {/* Info Section */}
+          <div style={{ 
+            background: '#e7f3ff', 
+            border: '2px solid #b3d9ff',
+            borderRadius: '1rem', 
+            padding: '1.5rem'
+          }}>
+            <h3 style={{ margin: '0 0 1rem 0', color: '#004085', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              ℹ️ معلومات مهمة
+            </h3>
+            <ul style={{ margin: 0, paddingRight: '1.5rem', color: '#004085' }}>
+              <li style={{ marginBottom: '0.5rem' }}>✅ <strong>التوليد التلقائي (ISR):</strong> الصفحات تُولد تلقائياً عند زيارتها لأول مرة</li>
+              <li style={{ marginBottom: '0.5rem' }}>✅ <strong>RUN TEST:</strong> لاختبار صفحة واحدة والتحقق من SEO</li>
+              <li style={{ marginBottom: '0.5rem' }}>✅ <strong>Revalidate:</strong> لتحديث صفحة موجودة بعد تعديل قاعدة البيانات</li>
+              <li style={{ marginBottom: '0.5rem' }}>⚠️ <strong>لا حاجة لزر RUN:</strong> لا تحاول توليد 194,688 صفحة دفعة واحدة!</li>
+              <li style={{ marginBottom: '0.5rem' }}>🔄 <strong>التحديث التلقائي:</strong> كل صفحة تُحدّث تلقائياً كل ساعة</li>
+              <li>🔗 <strong>القوائم الديناميكية:</strong> عند اختيار ماركة، تظهر فقط المنتجات المرتبطة بها</li>
+            </ul>
           </div>
-
-          {/* Test Result */}
-          {testResult && (
-            <div className={`test-result ${testResult.success ? 'success' : 'error'}`}>
-              <h3>{testResult.message}</h3>
-              
-              {testResult.success && (
-                <>
-                  <div className="result-info">
-                    <p><strong>الرابط:</strong></p>
-                    <a href={testResult.url} target="_blank" rel="noopener noreferrer" className="result-link">
-                      {testResult.url}
-                    </a>
-                  </div>
-
-                  <div className="result-info">
-                    <p><strong>Title:</strong></p>
-                    <p className="result-value">{testResult.title}</p>
-                  </div>
-
-                  <div className="result-info">
-                    <p><strong>Meta Description:</strong></p>
-                    <p className="result-value">{testResult.description}</p>
-                  </div>
-
-                  <div className="result-info">
-                    <p><strong>Canonical URL:</strong></p>
-                    <p className="result-value">{testResult.canonical}</p>
-                  </div>
-
-                  <div className="button-group">
-                    <a href={testResult.url} target="_blank" rel="noopener noreferrer">
-                      <button className="btn-primary">
-                        👁️ فتح الصفحة في تبويب جديد
-                      </button>
-                    </a>
-                  </div>
-                </>
-              )}
-
-              {!testResult.success && (
-                <p className="error-message">{testResult.message}</p>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Information */}
-        <div className="info-card">
-          <h3>ℹ️ معلومات مهمة</h3>
-          <ul>
-            <li>✅ <strong>التوليد التلقائي (ISR):</strong> الصفحات تُولد تلقائياً عند زيارتها لأول مرة</li>
-            <li>✅ <strong>RUN TEST:</strong> لاختبار صفحة واحدة والتحقق من SEO</li>
-            <li>✅ <strong>Revalidate:</strong> لتحديث صفحة موجودة بعد تعديل قاعدة البيانات</li>
-            <li>⚠️ <strong>لا حاجة لزر RUN:</strong> لا تحاول توليد {stats.estimatedPages.toLocaleString()} صفحة دفعة واحدة!</li>
-            <li>🔄 <strong>التحديث التلقائي:</strong> كل صفحة تُحدّث تلقائياً كل ساعة</li>
-          </ul>
         </div>
       </div>
-
-      <style jsx>{`
-        .admin-container {
-          max-width: 1400px;
-          margin: 0 auto;
-          padding: 2rem;
-          font-family: 'Cairo', sans-serif;
-          direction: rtl;
-        }
-
-        .admin-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 2rem;
-          padding-bottom: 1rem;
-          border-bottom: 2px solid #e0e0e0;
-        }
-
-        .admin-header h1 {
-          font-size: 2rem;
-          color: #333;
-          margin: 0;
-        }
-
-        .stats-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-          gap: 1.5rem;
-          margin-bottom: 2rem;
-        }
-
-        .stat-card {
-          background: white;
-          padding: 1.5rem;
-          border-radius: 12px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-          text-align: center;
-        }
-
-        .stat-card.highlight {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-        }
-
-        .stat-card h3 {
-          font-size: 0.95rem;
-          margin: 0 0 0.5rem 0;
-          color: #666;
-        }
-
-        .stat-card.highlight h3 {
-          color: white;
-        }
-
-        .stat-number {
-          font-size: 2.5rem;
-          font-weight: bold;
-          margin: 0;
-          color: #333;
-        }
-
-        .stat-card.highlight .stat-number {
-          color: white;
-        }
-
-        .section-card {
-          background: white;
-          padding: 2rem;
-          border-radius: 12px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-          margin-bottom: 2rem;
-        }
-
-        .section-card h2 {
-          font-size: 1.5rem;
-          margin: 0 0 0.5rem 0;
-          color: #333;
-        }
-
-        .section-description {
-          color: #666;
-          margin-bottom: 1.5rem;
-        }
-
-        .form-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-          gap: 1.5rem;
-          margin-bottom: 1.5rem;
-        }
-
-        .form-group {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .form-group label {
-          font-weight: 600;
-          margin-bottom: 0.5rem;
-          color: #333;
-        }
-
-        .form-select {
-          padding: 0.75rem;
-          border: 2px solid #e0e0e0;
-          border-radius: 8px;
-          font-size: 1rem;
-          font-family: 'Cairo', sans-serif;
-          transition: border-color 0.3s;
-        }
-
-        .form-select:focus {
-          outline: none;
-          border-color: #667eea;
-        }
-
-        .button-group {
-          display: flex;
-          gap: 1rem;
-          flex-wrap: wrap;
-        }
-
-        .btn-primary, .btn-secondary {
-          padding: 0.75rem 1.5rem;
-          border: none;
-          border-radius: 8px;
-          font-size: 1rem;
-          font-weight: 600;
-          font-family: 'Cairo', sans-serif;
-          cursor: pointer;
-          transition: all 0.3s;
-        }
-
-        .btn-primary {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-        }
-
-        .btn-primary:hover:not(:disabled) {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn-primary:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        .btn-large {
-          padding: 1rem 2rem;
-          font-size: 1.1rem;
-        }
-
-        .btn-secondary {
-          background: white;
-          color: #667eea;
-          border: 2px solid #667eea;
-        }
-
-        .btn-secondary:hover {
-          background: #667eea;
-          color: white;
-        }
-
-        .test-result {
-          margin-top: 2rem;
-          padding: 1.5rem;
-          border-radius: 12px;
-          border: 2px solid;
-        }
-
-        .test-result.success {
-          background: #f0fdf4;
-          border-color: #22c55e;
-        }
-
-        .test-result.error {
-          background: #fef2f2;
-          border-color: #ef4444;
-        }
-
-        .test-result h3 {
-          margin: 0 0 1rem 0;
-          font-size: 1.2rem;
-        }
-
-        .result-info {
-          margin-bottom: 1rem;
-        }
-
-        .result-info strong {
-          color: #333;
-        }
-
-        .result-value {
-          background: white;
-          padding: 0.75rem;
-          border-radius: 6px;
-          margin-top: 0.5rem;
-          font-size: 0.95rem;
-          color: #666;
-        }
-
-        .result-link {
-          display: inline-block;
-          background: white;
-          padding: 0.75rem;
-          border-radius: 6px;
-          margin-top: 0.5rem;
-          color: #667eea;
-          text-decoration: none;
-          font-weight: 600;
-        }
-
-        .result-link:hover {
-          text-decoration: underline;
-        }
-
-        .info-card {
-          background: #f8f9fa;
-          padding: 1.5rem;
-          border-radius: 12px;
-          border-right: 4px solid #667eea;
-        }
-
-        .info-card h3 {
-          margin: 0 0 1rem 0;
-          color: #333;
-        }
-
-        .info-card ul {
-          list-style: none;
-          padding: 0;
-          margin: 0;
-        }
-
-        .info-card li {
-          padding: 0.5rem 0;
-          color: #666;
-          line-height: 1.6;
-        }
-
-        .loading-container {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          min-height: 100vh;
-          font-size: 1.2rem;
-          color: #666;
-        }
-
-        @media (max-width: 768px) {
-          .admin-container {
-            padding: 1rem;
-          }
-
-          .admin-header {
-            flex-direction: column;
-            gap: 1rem;
-            text-align: center;
-          }
-
-          .stats-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .form-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .button-group {
-            flex-direction: column;
-          }
-
-          .btn-primary, .btn-secondary {
-            width: 100%;
-          }
-        }
-      `}</style>
     </>
   );
 }
